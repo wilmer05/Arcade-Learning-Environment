@@ -34,10 +34,16 @@ class Node{
         void restore_state(Node *nod, ALEInterface *env);
         bool get_is_terminal() {return is_terminal;}
         void set_is_terminal(bool v) { is_terminal = v;}
+       
+        bool get_is_duplicate() { return is_duplicate;}
+        void set_is_duplicate(bool v) { is_duplicate = v; }
+        bool test_duplicate();
+        std::vector<Node *> childs;
+        int count_nodes();
+        int reused_nodes;
     private:
 
         Node *parent;
-        std::vector<Node *> childs;
         ALEState state;
         int depth;
         double reward_so_far;
@@ -45,5 +51,6 @@ class Node{
         double discount;
         bool count_in_novelty;
         bool is_terminal;
+        bool is_duplicate;
 };
 #endif

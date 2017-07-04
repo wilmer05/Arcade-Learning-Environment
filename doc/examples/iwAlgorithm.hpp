@@ -41,6 +41,7 @@ class IW{
         int maximum_depth;
         ALEInterface *env;
         Node * root;
+        Node *best_node;
 
 };
 #endif
