@@ -25,6 +25,7 @@ class IW{
        
         float run();
 
+        int check_and_update_novelty(Node *);
 
     private:
         std::vector<std::pair<int,byte_t> > get_features();

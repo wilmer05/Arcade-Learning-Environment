@@ -32,6 +32,8 @@ class Node{
         void unset_count_in_novelty() { count_in_novelty = false; }
         std::vector<Node *> &get_childs(){ return childs; }
         void restore_state(Node *nod, ALEInterface *env);
+        bool get_is_terminal() {return is_terminal;}
+        void set_is_terminal(bool v) { is_terminal = v;}
     private:
 
         Node *parent;
@@ -42,5 +44,6 @@ class Node{
         Action action;
         double discount;
         bool count_in_novelty;
+        bool is_terminal;
 };
 #endif

@@ -64,28 +64,50 @@ float IW::run() {
        //}
        
        //std::cout << "VA\n" ;
+       bool leaf = curr_node->get_childs().size() == 0;
+       //std::cout <<leaf<< "\n";
        std::vector<Node *> succs = curr_node->get_successors(env);
        curr_node -> unset_count_in_novelty();
 
        for(int i =0 ; i < succs.size() && generated < max_lookahead; i++){
-           restore_state(succs[i]);
-           //std::cout << env->getFrameNumber() << "\n";
-           std::vector<std::pair<int,byte_t> > fs = get_features(); 
-           if( succs[i]-> get_count_in_novelty() && novelty(fs) == 1){
-                //std::cout << curr_node->get_depth() << "\n";
-                add_to_novelty_table(fs);
-                //std::cout << "VA2\n" ;
-                q.push(succs[i]); 
+           if(leaf) {
                 generated ++;
-                news ++;
+			    if (check_and_update_novelty(succs[i]) != 1){
+				    succs[i]->set_is_terminal(true);
+				    pruned++;
+				//continue;
+			    }
+           } else{
+                if(succs[i] -> get_is_terminal()){
+                
+                      if(check_and_update_novelty(succs[i]) == 1){
+                        //add_to_novelty_table(fs);
+                        succs[i]->set_is_terminal(false);
+                      } else{
+                        pruned++;
+                        succs[i]->set_is_terminal(true);
+                      }
+                }
+           //restore_state(succs[i]);
+           ////std::cout << env->getFrameNumber() << "\n";
+           //std::vector<std::pair<int,byte_t> > fs = get_features(); 
+           //if( succs[i]-> get_count_in_novelty() && novelty(fs) == 1){
+           //     //std::cout << curr_node->get_depth() << "\n";
+           //     add_to_novelty_table(fs);
+           //     //std::cout << "VA2\n" ;
+           //     q.push(succs[i]); 
+           //     generated ++;
+           //     news ++;
+           // }
+           // else if(! succs[i]->get_count_in_novelty()) {
+           //     q.push(succs[i]); 
+           //     generated ++;
+           // }
+           // else pruned ++;
             }
-            else if(! succs[i]->get_count_in_novelty()) {
-                q.push(succs[i]); 
-                generated ++;
-            }
-            else pruned ++;
-
-       }
+           if(!succs[i]->get_is_terminal()) q.push(succs[i]);
+         }
+            
     }
     std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << best_node -> get_reward_so_far() << std::endl;
     std::cout<< "Generated nodes: " << generated << std::endl;
@@ -123,7 +145,17 @@ void IW::update_tree(Node *nod, float reward){
     nod->set_depth(nod->get_depth() - 1);
     nod->set_reward_so_far(reward);
 }
+int IW::check_and_update_novelty( Node * nod){
 
+    restore_state(nod);
+    std::vector<std::pair<int,byte_t> > fs = get_features(); 
+    int nov = novelty(fs);
+    if ( nov == 1 ) {
+	    add_to_novelty_table(fs);
+	}
+
+    return nov;
+}
 std::vector<std::pair<int,byte_t> > IW::get_features(){
     std::vector<std::pair<int,byte_t> > fs;
     if (features_type == RAM_FEATURES){

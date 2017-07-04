@@ -5,6 +5,7 @@
 #endif
 #include"Node.hpp"
 #include "constants.hpp"
+#include<algorithm>
 Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double disc) {
     parent = par;
     state = ale_state;
@@ -14,6 +15,7 @@ Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double 
     action = act;
     childs = std::vector<Node *>();
     count_in_novelty = true;
+    is_terminal = false;
     /*std::cout << parent << std::endl;
     std::cout << depth << std::endl;
     std::cout << rew << std::endl;
@@ -70,7 +72,7 @@ std::vector<Node *> Node::get_successors(ALEInterface *env){
         //std::cout << acts[i] <<"\n";
         succs.push_back(new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc));
     }
-
+    random_shuffle(succs.begin(), succs.end());
     childs = succs;
     return childs;
 }
