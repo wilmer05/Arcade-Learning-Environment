@@ -12,7 +12,8 @@ Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double 
     reward_so_far = rew;
     discount = disc;
     action = act;
-    
+    childs = std::vector<Node *>();
+    count_in_novelty = true;
     /*std::cout << parent << std::endl;
     std::cout << depth << std::endl;
     std::cout << rew << std::endl;
@@ -24,26 +25,52 @@ ALEState Node::get_state(){
     return this->state;
 }
 
+
+void Node::restore_state(Node *nod, ALEInterface *env){
+    Node * par = nod->get_parent();
+    if(par != NULL){
+        env->restoreState(par->get_state());
+        env->act(nod->get_action());
+     } else{
+        env->restoreState(nod->get_state());
+     }
+}
+
 std::vector<Node *> Node::get_successors(ALEInterface *env){
     std::vector<Node *> succs;
 
-    if(depth >= max_depth) return succs;
+    if(childs.size() > 0) return childs;
 
-    env->restoreState(state);
-
-    if(env->game_over()) 
+    if(depth >= max_depth) {
         return succs;
+    }
+
+    restore_state(this, env);
+
+    if(env->game_over()){ 
+        return succs;
+    }
 
     ActionVect acts = env->getMinimalActionSet();
     int cur_d = depth + 1;
     double cur_disc = discount * discount_reward;
 
     for(int i = 0; i < acts.size(); i++) {
-        env->restoreState(state);
+        restore_state(this, env);
+        //std::cout << acts[i] << " -> \n";
+        
+        //std::cout << env->getFrameNumber() << " -.- \n";
+        
         float reward = env->act(acts[i]) * cur_disc;
         ALEState nextState = env->cloneState();
+        //if(nextState == env->cloneState) std::cout <<"WHAT" << "\n";
+        //if(reward != 0.0) std::cout << "algo hay" << "\n";
+        if(env->game_over()) reward = -10000000;
+        //std::cout << env->getFrameNumber() << "\n";
+        //std::cout << acts[i] <<"\n";
         succs.push_back(new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc));
     }
-    
-    return succs;
+
+    childs = succs;
+    return childs;
 }

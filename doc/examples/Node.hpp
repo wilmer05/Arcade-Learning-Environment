@@ -16,20 +16,31 @@ class Node{
         ALEState get_state();
         
         double get_reward_so_far(){ return reward_so_far; }
+        void set_reward_so_far(float substract){ 
+            reward_so_far /= discount_reward;
+            reward_so_far -= substract; 
+            discount /= discount_reward;
+        }
 
         int get_depth() { return depth; } 
 
+        void set_depth(int val) { depth = val; } 
         Node * get_parent() { return parent;}
 
         Action get_action() { return action; } 
-
+        bool get_count_in_novelty() {return count_in_novelty;} 
+        void unset_count_in_novelty() { count_in_novelty = false; }
+        std::vector<Node *> &get_childs(){ return childs; }
+        void restore_state(Node *nod, ALEInterface *env);
     private:
 
         Node *parent;
+        std::vector<Node *> childs;
         ALEState state;
         int depth;
         double reward_so_far;
         Action action;
         double discount;
+        bool count_in_novelty;
 };
 #endif
