@@ -48,7 +48,8 @@ float IW::run() {
     Node *curr_node  = root;
     //std::cout <<root <<"\n";
     q.push(curr_node);
-    Node *best_node = curr_node;
+    ActionVect v  = env->getMinimalActionSet();
+    Node *best_node = new Node(NULL, v[0], env->cloneState(), -5000000, -5000000, -5000000);
     int generated = 1;
     int news = 0;
     int pruned = 0 ;
@@ -56,7 +57,7 @@ float IW::run() {
        curr_node = q.front();
        q.pop();
        if (maximum_depth < curr_node->get_depth()) maximum_depth = curr_node->get_depth();
-       if(best_node->get_reward_so_far() < curr_node->get_reward_so_far())
+       if(best_node->get_reward_so_far() < curr_node->get_reward_so_far() && curr_node != root)
             best_node = curr_node;
        //for(int i =0 ; i < fs.size(); i++){
       //  std::cout << fs[i].second << " " ;
