@@ -14,6 +14,7 @@ typedef std::vector<std::vector< std::set<int> > > basic_table_t;
 #ifndef DEF_IW_RGB
 #define DEF_IW_RGB
 static bool novelty_table_bpros[k_different_colors][k_different_colors][k_novelty_columns * 2][k_novelty_rows * 2];
+static bool novelty_table_bprot[k_different_colors][k_different_colors][k_novelty_columns * 2][k_novelty_rows * 2];
 class IWRGB{
     public:
         IWRGB() { 
@@ -33,7 +34,7 @@ class IWRGB{
 
     private:
         basic_table_t get_features();
-        int novelty(basic_table_t &fs);
+        int novelty(Node *, basic_table_t &fs);
         void remove_tree(Node *); 
         void reset();
         void restore_state(Node *nod);

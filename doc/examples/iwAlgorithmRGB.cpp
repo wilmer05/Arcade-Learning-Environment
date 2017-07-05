@@ -180,7 +180,7 @@ int IWRGB::check_and_update_novelty( Node * nod){
     restore_state(nod);
     basic_table_t fs = get_features(); 
 
-    int nov = novelty(fs);
+    int nov = novelty(nod, fs);
     //std::cout << nov <<" " ;
     return nov;
 }
@@ -202,11 +202,25 @@ basic_table_t IWRGB::get_features(){
     return v;
 }
 
-int IWRGB::novelty(basic_table_t &fs){
+int IWRGB::novelty(Node * nod, basic_table_t &fs){
     int nov = 1e9;
-    std::set<int>::iterator it, it2;
+    std::set<int>::iterator it, it2, it3;
     int sz1 = fs.size(); int sz2 = fs[0].size();
 //    std::cout << sz1 << " " << sz2 << "\n";
+    basic_table_t fs_parent;
+    Node *par;
+    if(features_type == 3){
+        par = nod;
+        int cnt = 0;
+        while(par != NULL && cnt++ < 4){
+           par = par -> get_parent(); 
+        }
+        if(par != NULL){
+            restore_state(par);
+            fs_parent = get_features();
+        }
+    }
+
     for(int i =0 ; i< sz1;i++){
         for(int j = 0 ; j < sz2; j++){
             it = fs[i][j].begin();
@@ -220,20 +234,31 @@ int IWRGB::novelty(basic_table_t &fs){
                 if(compute_BPROS()){
                     //std::cout << "BPROS" << "\n";
                     for(int i2 =0 ; i2< sz1;i2++){
-                        for(int j2 = j ; j2 < sz2; j2++){
-                            if(j2 == j && i2 <= i) continue;
+                        for(int j2 = 0 ; j2 < sz2; j2++){
+                            if(features_type == 3 && par != NULL){
+                                it3 = fs_parent[i2][j2].begin();
+                                while(it3 != fs_parent[i2][j2].end()){
+                                    int k1 = *it;
+                                    int k2 = *it3;
+                                    int cc = i - i2 + k_novelty_columns;
+                                    int rr = j - j2 + k_novelty_rows;
+                                    //std::cout << k1 << " " << k2 << " " << cc << " " << rr << "\n";
+                                    if(novelty_table_bprot[k1][k2][cc][rr] == 0){
+                                        //std::cout << "BPROS_NEW" << "\n";
+                                        nov = 1;
+                                    }
+                                    novelty_table_bprot[k1][k2][cc][rr] = 1;
+                                    it3++;
+                                }
+                            }
+
+                            if(j2 < j || (j2 == j && i2 <= i)) continue;
                             it2 = fs[i2][j2].begin();
                             while(it2 != fs[i2][j2].end()){
                                 int k1 = *it;
                                 int k2 = *it2;
                                 int cc = i - i2 + k_novelty_columns;
                                 int rr = j - j2 + k_novelty_rows;
-                                //std::cout << cc << " " << rr << " " << k1 << " " << k2 << "\n";
-                                //std::cout <<"pase" << "\n";
-                                if(cc < 0 || rr < 0 || k1 < 0 || k2 < 0){
-                                    //std::cout << cc << " " << rr << " " << i << "-"  << i2 << " " << j<< "-" << j2<< " " << k1 << " " << k2 << "\n";
-                                    //continue;
-                                }
                                 if(novelty_table_bpros[k1][k2][cc][rr] == 0){
                                     //std::cout << "BPROS_NEW" << "\n";
                                     nov = 1;
