@@ -38,6 +38,7 @@ class IW{
         void update_tree(Node *, float);
         std::queue<Node *> q;
         int features_type;
+        int fs;
         int maximum_depth;
         ALEInterface *env;
         Node * root;

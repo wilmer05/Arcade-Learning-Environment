@@ -71,9 +71,9 @@ std::vector<Node *> Node::get_successors(ALEInterface *env){
 
     if(childs.size() > 0) return childs;
 
-    if(depth >= max_depth) {
+    /*if(depth >= max_depth) {
         return succs;
-    }
+    }*/
 
     restore_state(this, env);
 
