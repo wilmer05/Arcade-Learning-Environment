@@ -25,7 +25,7 @@ endif
 all: iwAgentRGB
 
 iwAgentRGB:
-	$(CXX) $(DEFINES) $(FLAGS) $(FILE).cpp Node.cpp iwAlgorithmRGB.cpp $(LDFLAGS) -o $(FILE)
+	$(CXX) $(DEFINES) $(FLAGS) $(FILE).cpp Node.cpp iwAlgorithmRGB.cpp utils.cpp $(LDFLAGS) -o $(FILE)
 
 clean:
 	rm -rf iwAgentRGB *.o

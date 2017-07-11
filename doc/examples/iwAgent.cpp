@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
     int episode;
     //ActionVect legal_actions = ale.getMinimalActionSet();
     IW iw = IW(1, &ale);
-    for (episode=0; !ale.game_over() && episode<max_steps; episode++) {
+    for (episode=0; !ale.game_over() && episode<max_steps / 5; episode++) {
         //Action a = iw.run(curr_state, &ale);
         //Action a = legal_actions[3]; 
         //int a;

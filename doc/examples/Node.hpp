@@ -22,6 +22,7 @@ class Node{
             discount /= discount_reward;
         }
 
+        void add_tried() {tried ++;} 
         int get_depth() { return depth; } 
 
         void set_depth(int val) { depth = val; } 
@@ -41,6 +42,7 @@ class Node{
         std::vector<Node *> childs;
         int count_nodes();
         int reused_nodes;
+        int tried;
     private:
 
         Node *parent;

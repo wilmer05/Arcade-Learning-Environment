@@ -27,8 +27,8 @@
 using namespace std;
 
 int main(int argc, char** argv) {
-    if (argc < 4) {
-        std::cerr << "Usage: " << argv[0] << " rom_file <feature_types (1,2,3)> <frame_skip>" << std::endl;
+    if (argc != 7) {
+        std::cerr << "Usage: " << argv[0] << " rom_file <feature_types (1,2,3)> <frame_skip> <tile_row_size> <tile_column_size> <delta_displacement>\nFeatures types:\n\t1 For basic features\n\t2 for basic features + BPROS\n\t3 for basic + BPROS + BPROT\n\n The displacement is the displacement of basic features on the rows (a number between 0 and tile_row_size - 1)" << std::endl;
         return 1;
     }
 
@@ -55,28 +55,20 @@ int main(int argc, char** argv) {
     float totalReward = 0;
     int episode;
     //ActionVect legal_actions = ale.getMinimalActionSet();
-    IWRGB iw = IWRGB(atoi(argv[2]), &ale, fs);
+    IWRGB iw = IWRGB(atoi(argv[2]), &ale, fs, atoi(argv[4]), atoi(argv[5]), atoi(argv[6]));
     cout << "Starting Episode\n";
-    for (episode=0; !ale.game_over() && episode<(max_steps * 5) / fs; episode++) {
-        //Action a = iw.run(curr_state, &ale);
-        //Action a = legal_actions[3]; 
-        //int a;
-        //std::cin >> a;
-        //ale.restoreState(curr_state);
-        //totalReward += ale.act(legal_actions[a]);
+    for (episode=0; !ale.game_over() && episode<max_steps / fs; episode++) {
+
         time_t start,end;
         time (&start);
+        
         totalReward += iw.run();
+        
         time(&end);
-        //curr_state = ale.cloneState();
-        //const ALERAM &ram = ale.getRAM();
-        //for(int i =0 ;i < ram.size();i++)
-        //    cout << (int)ram.get(i) << " ";
-        //cout <<"NEXT\n";
-        //cout << "Current frame: " << ale.getFrameNumber() << endl;
 
         cout << "Step number " << episode  + 1<< " ended with score: " << totalReward << endl;
         cout <<"Elapsed time: " << difftime(end,start) << endl;
+        cout << "Total features in lookahead = " << iw.get_total_features() << "\n";
     }
     if(episode == max_steps) cout << "Ended by number of steps\n";
     else cout <<"Ended by game over \n";

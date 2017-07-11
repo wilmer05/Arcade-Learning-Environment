@@ -7,19 +7,35 @@
 #include<utility>
 #include "iwAlgorithmRGB.hpp"
 #include "constants.hpp"
+#include "utils.hpp"
 
-
-IWRGB::IWRGB(int ft, ALEInterface *ale, int fs) {
+IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column_sz, int delta) {
     features_type = ft;
     q = std::queue<Node *>();
     env = ale;
     root = NULL;
     this -> fs = fs;
+    tile_row_size = tile_row_sz;
+    tile_column_size = tile_column_sz;
+    
+    c_number = 160 / tile_column_sz;
+    r_number = 210 / tile_row_sz;
+    displacement = delta;
+    novelty_table_basic.clear();
+    int cnt = 0;
+    while(1){
+        novelty_table_basic.push_back(std::vector< std::vector<std::vector<bool> > >(c_number + 5, std::vector< std::vector<bool> >(r_number + 5, std::vector<bool>(k_different_colors, false))));
+        cnt++;
+        if(cnt * displacement >= tile_row_size || !displacement) break;
+    }
+
+    number_of_tables = cnt;
+    std::cout << "Screen splitted in " << novelty_table_basic[0][0].size() - 1<< " rows and " << novelty_table_basic[0].size() - 1<< " columns and there are " << cnt << " displacements\n" ;
 
     //std::cout <<novelty_table.size() << "\n";
 }
 
-void IWRGB::restore_state(Node *nod){
+/*void IWRGB::restore_state(Node *nod){
     Node * par = nod->get_parent();
     if(par != NULL){
         env->restoreState(par->get_state());
@@ -27,7 +43,7 @@ void IWRGB::restore_state(Node *nod){
      } else{
         env->restoreState(nod->get_state());
      }
-}
+}*/
 
 void IWRGB::reset(){
     if(root == NULL) {
@@ -35,36 +51,33 @@ void IWRGB::reset(){
         root = new Node(NULL, v[0], env->cloneState(), 1, 0, 1);
         best_node = new Node(NULL, v[0], env->cloneState(), -5000000, -5000000, -5000000);
     }
-    for(int i = 0; i<k_novelty_columns;i++) for(int j = 0; j < k_novelty_rows; j++) for(int k = 0; k<k_different_colors;k++) novelty_table_basic[i][j][k]=0;
+
+    for(int d =0 ; d < number_of_tables; d++)
+        for(int i = 0; i<c_number + 2;i++) 
+            for(int j = 0; j < r_number + 2; j++) 
+                for(int k = 0; k<k_different_colors;k++) 
+                    novelty_table_basic[d][i][j][k]=false;
 
     if(compute_BPROS()){
          
         for(int i = 0; i<2 * k_novelty_columns;i++) 
             for(int j = 0; j < 2 * k_novelty_rows; j++) 
                 for(int k1 = 0; k1<k_different_colors;k1++)  
-                    for(int k2 = 0 ; k2<k_different_colors;k2++) novelty_table_bpros[k1][k2][i][j]=0;
+                    for(int k2 = 0 ; k2<k_different_colors;k2++) novelty_table_bpros[k1][k2][i][j]= novelty_table_bprot[k1][k2][i][j] = 0;
 
     }
+    total_features = 0;
 }
 
 float IWRGB::run() {
-    //std::cout <<env << "\n";
     reset();
-    //env->restoreState(state);
-    //std::vector<unsigned char> vvv;
-    //env->getScreenGrayscale(vvv);
-    /*for(int i =0 ; i < vvv.size(); i++){
-        std::cout << (int) vvv[i]  << " " ;
-    }*/
     Node *curr_node  = root;
 
     std::vector<Node *> chs = curr_node->get_childs();
     for(int i= 0 ; i< chs.size(); i++) {
+        //std::cout <<"Entre " << chs.size() << " " << chs[i]->tried << "\n";
         chs[i]->count_nodes();
-   //    if(chs[i]->reused_nodes > 1)
-   //         std::cout <<chs[i]->reused_nodes << "\n";
     }
-    //std::cout <<root <<"\n";
     q.push(curr_node);
     ActionVect v  = env->getMinimalActionSet();
     int generated = 1;
@@ -78,13 +91,8 @@ float IWRGB::run() {
        if (maximum_depth < curr_node->get_depth()) maximum_depth = curr_node->get_depth();
        if(best_node->get_reward_so_far() < curr_node->get_reward_so_far() && curr_node != root)
             best_node = curr_node;
-       //for(int i =0 ; i < fs.size(); i++){
-      //  std::cout << fs[i].second << " " ;
-       //}
        
-       //std::cout << "VA\n" ;
        bool leaf = curr_node->get_childs().size() == 0;
-       //std::cout <<leaf<< "\n";
        std::vector<Node *> succs;
        if(curr_node->get_depth() < max_depth / this -> fs){
             succs = curr_node->get_successors(env);
@@ -92,42 +100,29 @@ float IWRGB::run() {
        curr_node -> unset_count_in_novelty();
 
        for(int i =0 ; i < succs.size() && generated < max_lookahead / this->fs; i++){
-           //if(succs[i]->get_is_duplicate()) continue;
            if(leaf) {
                 generated ++;
 			    if (check_and_update_novelty(succs[i]) != 1){
 				    succs[i]->set_is_terminal(true);
-				    pruned++;
-				//continue;
-			    }
+                    succs[i]->tried++;
+				    //pruned++;
+			    } else {
+                    succs[i]->tried = 0;
+                    succs[i]->set_is_terminal(false);
+                }
            } else{
                 if(succs[i] -> get_is_terminal()){
                       if(check_and_update_novelty(succs[i]) == 1){
                         //add_to_novelty_table(fs);
                         succs[i]->set_is_terminal(false);
                       } else{
-                        pruned++;
+                        //pruned++;
                         succs[i]->set_is_terminal(true);
                       }
                 }
-           //restore_state(succs[i]);
-           ////std::cout << env->getFrameNumber() << "\n";
-           //std::vector<std::pair<int,byte_t> > fs = get_features(); 
-           //if( succs[i]-> get_count_in_novelty() && novelty(fs) == 1){
-           //     //std::cout << curr_node->get_depth() << "\n";
-           //     add_to_novelty_table(fs);
-           //     //std::cout << "VA2\n" ;
-           //     q.push(succs[i]); 
-           //     generated ++;
-           //     news ++;
-           // }
-           // else if(! succs[i]->get_count_in_novelty()) {
-           //     q.push(succs[i]); 
-           //     generated ++;
-           // }
-           // else pruned ++;
             }
-           if(!succs[i]->get_is_terminal() && !succs[i]->test_duplicate() && succs[i]->reused_nodes < max_lookahead  / this->fs) q.push(succs[i]);
+           if((!succs[i]->get_is_terminal() /*|| (leaf && succs[i]->tried * this->fs < 30)*/) && !succs[i]->test_duplicate() && succs[i]->reused_nodes < max_lookahead  / this->fs) q.push(succs[i]);
+           else pruned++;
      //      else if(succs[i]->reused_nodes >= max_lookahead) std::cout <<"Obviado para busqueda\n";
          }
             
@@ -142,7 +137,7 @@ float IWRGB::run() {
     Action best_act = best_node -> get_action();
 
     std::vector<Node *> ch = root->get_childs();
-    restore_state(root);
+    restore_state(root, env);
     float rw = env->act(best_act);
     for(int i =0 ; i<ch.size(); i++) {
         if(ch[i] != best_node) 
@@ -177,35 +172,31 @@ void IWRGB::update_tree(Node *nod, float reward){
 }
 int IWRGB::check_and_update_novelty( Node * nod){
 
-    restore_state(nod);
+    restore_state(nod, env);
     basic_table_t fs = get_features(); 
 
-    int nov = novelty(nod, fs);
-    //std::cout << nov <<" " ;
-    return nov;
+    return novelty(nod, fs);
 }
 basic_table_t IWRGB::get_features(){
     std::vector<byte_t> screen;
     env->getScreenGrayscale(screen);
 
-    basic_table_t v(k_novelty_columns, std::vector<std::set<int> >(k_novelty_rows, std::set<int>()));
-    for(int i=0; i<screen.size(); i++){
-        int c = (i % 160) / k_box_columns_size;
-        int r = (i / 160) / k_box_rows_size;
-        //std::cout << r << " " << c << "\n";
-        //std::cout << i << " " << c << " " << r << "\n";
-        v[c][r].insert((int)screen[i]);
-        //if((int) screen[i] > 200)
-        //std::cout << (int) screen[i] << "\n";
+    basic_table_t v(number_of_tables ,std::vector< std::vector<std::set<int> > >(c_number + 2, std::vector<std::set<int> >(r_number + 2, std::set<int>())));
+    for(int d =0 ; d < number_of_tables; d++)
+        for(int i=0; i<screen.size(); i++){
 
-    } 
+            int c = (i % 160) / tile_column_size;
+            int r = (i / 160 + d * displacement) / tile_row_size;
+
+            v[d][c][r].insert((int)screen[i]);
+
+        } 
     return v;
 }
 
 int IWRGB::novelty(Node * nod, basic_table_t &fs){
     int nov = 1e9;
     std::set<int>::iterator it, it2, it3;
-    int sz1 = fs.size(); int sz2 = fs[0].size();
 //    std::cout << sz1 << " " << sz2 << "\n";
     basic_table_t fs_parent;
     Node *par;
@@ -216,61 +207,64 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
            par = par -> get_parent(); 
         }
         if(par != NULL){
-            restore_state(par);
+            restore_state(par, env);
             fs_parent = get_features();
         }
     }
 
-    for(int i =0 ; i< sz1;i++){
-        for(int j = 0 ; j < sz2; j++){
-            it = fs[i][j].begin();
-            while(it != fs[i][j].end()){
-                
-                if(novelty_table_basic[i][j][*it] == 0){
-                    nov = 1;
-                }
-                
-                novelty_table_basic[i][j][*it] = 1;
-                if(compute_BPROS()){
-                    //std::cout << "BPROS" << "\n";
-                    for(int i2 =0 ; i2< sz1;i2++){
-                        for(int j2 = 0 ; j2 < sz2; j2++){
-                            if(features_type == 3 && par != NULL){
-                                it3 = fs_parent[i2][j2].begin();
-                                while(it3 != fs_parent[i2][j2].end()){
+    for(int d =0 ; d < number_of_tables; d++){
+        int sz1 = fs[d].size(); int sz2 = fs[d][0].size();
+        for(int i =0 ; i< sz1;i++){
+            for(int j = 0 ; j < sz2; j++){
+                it = fs[d][i][j].begin();
+                while(it != fs[d][i][j].end()){
+                    if(novelty_table_basic[d][i][j][*it] == 0){
+                        nov = 1;
+                        total_features++;
+                    }
+                    //std::cout << i << " ---  " <<  j << "\n";
+                    novelty_table_basic[d][i][j][*it] = 1;
+                    if(!d && compute_BPROS()){
+                        //std::cout << "BPROS" << "\n";
+                        for(int i2 =0 ; i2< sz1;i2++){
+                            for(int j2 = 0 ; j2 < sz2; j2++){
+                                if(features_type == 3 && par != NULL){
+                                    it3 = fs_parent[0][i2][j2].begin();
+                                    while(it3 != fs_parent[0][i2][j2].end()){
+                                        int k1 = *it;
+                                        int k2 = *it3;
+                                        int cc = i - i2 + k_novelty_columns;
+                                        int rr = j - j2 + k_novelty_rows;
+                                        //std::cout << k1 << " " << k2 << " " << cc << " " << rr << "\n";
+                                        if(novelty_table_bprot[k1][k2][cc][rr] == 0){
+                                            //std::cout << "BPROS_NEW" << "\n";
+                                            nov = 1;
+                                        }
+                                        novelty_table_bprot[k1][k2][cc][rr] = 1;
+                                        it3++;
+                                    }
+                                }
+
+                                if(j2 < j || (j2 == j && i2 <= i)) continue;
+                                it2 = fs[d][i2][j2].begin();
+                                while(it2 != fs[d][i2][j2].end()){
                                     int k1 = *it;
-                                    int k2 = *it3;
+                                    int k2 = *it2;
                                     int cc = i - i2 + k_novelty_columns;
                                     int rr = j - j2 + k_novelty_rows;
-                                    //std::cout << k1 << " " << k2 << " " << cc << " " << rr << "\n";
-                                    if(novelty_table_bprot[k1][k2][cc][rr] == 0){
+                                    if(novelty_table_bpros[k1][k2][cc][rr] == 0){
                                         //std::cout << "BPROS_NEW" << "\n";
                                         nov = 1;
                                     }
-                                    novelty_table_bprot[k1][k2][cc][rr] = 1;
-                                    it3++;
+                                    novelty_table_bpros[k1][k2][cc][rr] = 1;
+                                    it2++;
                                 }
-                            }
-
-                            if(j2 < j || (j2 == j && i2 <= i)) continue;
-                            it2 = fs[i2][j2].begin();
-                            while(it2 != fs[i2][j2].end()){
-                                int k1 = *it;
-                                int k2 = *it2;
-                                int cc = i - i2 + k_novelty_columns;
-                                int rr = j - j2 + k_novelty_rows;
-                                if(novelty_table_bpros[k1][k2][cc][rr] == 0){
-                                    //std::cout << "BPROS_NEW" << "\n";
-                                    nov = 1;
-                                }
-                                novelty_table_bpros[k1][k2][cc][rr] = 1;
-                                it2++;
                             }
                         }
+                    
                     }
-                
+                    it++;
                 }
-                it++;
             }
         }
     }

@@ -18,6 +18,7 @@ Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double 
     is_terminal = false;
     is_duplicate = false;
     reused_nodes = 0;
+    tried = 0;
     /*std::cout << parent << std::endl;
     std::cout << depth << std::endl;
     std::cout << rew << std::endl;
@@ -77,13 +78,35 @@ std::vector<Node *> Node::get_successors(ALEInterface *env){
 
     restore_state(this, env);
 
+    ActionVect acts = env->getMinimalActionSet();
+    int cur_d = depth + 1;
+    double cur_disc = discount * discount_reward;
+
+    
     if(env->game_over()){ 
         return succs;
     }
 
-    ActionVect acts = env->getMinimalActionSet();
-    int cur_d = depth + 1;
-    double cur_disc = discount * discount_reward;
+
+    /*if(tried){
+        //std::cout <<"Entre\n"; 
+        restore_state(this, env);
+        float reward = env->act(action) * cur_disc;
+        ALEState nextState = env->cloneState();
+        //if(nextState == env->cloneState) std::cout <<"WHAT" << "\n";
+        //if(reward != 0.0) std::cout << "algo hay" << "\n";
+        if(env->game_over()) reward = -10000000;
+        //std::cout << env->getFrameNumber() << "\n";
+        //std::cout << acts[i] <<"\n";
+        //std::cout <<"Va" << "\n";
+        Node *nx = new Node(this, action, nextState, cur_d, reward_so_far + reward, cur_disc);
+        nx->tried = tried + 1;
+        succs.push_back(nx);
+        //std::cout <<"Sali\n";
+        return succs;
+    }*/
+
+
 
     for(int i = 0; i < acts.size(); i++) {
         restore_state(this, env);
