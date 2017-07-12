@@ -20,6 +20,7 @@ IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column
     
     c_number = 160 / tile_column_sz;
     r_number = 210 / tile_row_sz;
+    maximum_depth = 0;
     displacement = delta;
     novelty_table_basic.clear();
     int cnt = 0;
@@ -67,6 +68,7 @@ void IWRGB::reset(){
 
     }
     total_features = 0;
+    maximum_depth = 0;
 }
 
 float IWRGB::run() {
