@@ -11,8 +11,11 @@ class Node{
 
         Node(Node* par, Action act, ALEState ale_state, int d, double rew, double discs);
 
+        Node(Node* par, Action act, int d, double rew, double discs);
+
         std::vector<Node *> get_successors(ALEInterface *env);
 
+        std::vector<Node *> get_stateless_successors(ALEInterface *env);
         ALEState get_state();
         
         double get_reward_so_far(){ return reward_so_far; }
@@ -21,7 +24,9 @@ class Node{
             reward_so_far -= substract; 
             discount /= discount_reward;
         }
-
+         void set_rw(float rw){ 
+            reward_so_far = rw;
+        }
         void add_tried() {tried ++;} 
         int get_depth() { return depth; } 
 
@@ -35,7 +40,8 @@ class Node{
         void restore_state(Node *nod, ALEInterface *env);
         bool get_is_terminal() {return is_terminal;}
         void set_is_terminal(bool v) { is_terminal = v;}
-       
+       double get_discount() { return discount; }
+
         bool get_is_duplicate() { return is_duplicate;}
         void set_is_duplicate(bool v) { is_duplicate = v; }
         bool test_duplicate();
@@ -43,6 +49,9 @@ class Node{
         int count_nodes();
         int reused_nodes;
         int tried;
+        ActionVect childActs;
+        bool solved;
+        bool in_tree;
     private:
 
         Node *parent;

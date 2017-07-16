@@ -19,12 +19,36 @@ Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double 
     is_duplicate = false;
     reused_nodes = 0;
     tried = 0;
+    in_tree = false;
     /*std::cout << parent << std::endl;
     std::cout << depth << std::endl;
     std::cout << rew << std::endl;
     std::cout << disc << std::endl;
     std::cout << act << std::endl;*/
 }
+
+Node::Node(Node* par, Action act, int d, double rew, double disc) {
+    parent = par;
+    //state = ale_state;
+    depth = d;
+    reward_so_far = rew;
+    discount = disc;
+    action = act;
+    childs = std::vector<Node *>();
+    count_in_novelty = true;
+    is_terminal = false;
+    is_duplicate = false;
+    reused_nodes = 0;
+    tried = 0;
+    solved = false;
+    in_tree = false;
+    /*std::cout << parent << std::endl;
+    std::cout << depth << std::endl;
+    std::cout << rew << std::endl;
+    std::cout << disc << std::endl;
+    std::cout << act << std::endl;*/
+}
+
 
 ALEState Node::get_state(){
     return this->state;
@@ -79,6 +103,7 @@ std::vector<Node *> Node::get_successors(ALEInterface *env){
     restore_state(this, env);
 
     ActionVect acts = env->getMinimalActionSet();
+
     int cur_d = depth + 1;
     double cur_disc = discount * discount_reward;
 
@@ -86,28 +111,6 @@ std::vector<Node *> Node::get_successors(ALEInterface *env){
     if(env->game_over()){ 
         return succs;
     }
-
-
-    /*if(tried){
-        //std::cout <<"Entre\n"; 
-        restore_state(this, env);
-        float reward = env->act(action) * cur_disc;
-        ALEState nextState = env->cloneState();
-        //if(nextState == env->cloneState) std::cout <<"WHAT" << "\n";
-        //if(reward != 0.0) std::cout << "algo hay" << "\n";
-        if(env->game_over()) reward = -10000000;
-        //std::cout << env->getFrameNumber() << "\n";
-        //std::cout << acts[i] <<"\n";
-        //std::cout <<"Va" << "\n";
-        Node *nx = new Node(this, action, nextState, cur_d, reward_so_far + reward, cur_disc);
-        nx->tried = tried + 1;
-        succs.push_back(nx);
-        //std::cout <<"Sali\n";
-        return succs;
-    }*/
-
-
-
     for(int i = 0; i < acts.size(); i++) {
         restore_state(this, env);
         //std::cout << acts[i] << " -> \n";
@@ -122,6 +125,46 @@ std::vector<Node *> Node::get_successors(ALEInterface *env){
         //std::cout << env->getFrameNumber() << "\n";
         //std::cout << acts[i] <<"\n";
         succs.push_back(new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc));
+    }
+    random_shuffle(succs.begin(), succs.end());
+    childs = succs;
+    return childs;
+}
+
+std::vector<Node *> Node::get_stateless_successors(ALEInterface *env){
+    std::vector<Node *> succs;
+
+    if(childs.size() > 0) return childs;
+
+    /*if(depth >= max_depth) {
+        return succs;
+    }*/
+
+    //restore_state(this, env);
+
+    ActionVect acts = env->getMinimalActionSet();
+    this -> childActs = acts;
+    int cur_d = depth + 1;
+    double cur_disc = discount * discount_reward;
+
+    if(env->game_over()){ 
+        return succs;
+    }
+    for(int i = 0; i < acts.size(); i++) {
+        //restore_state(this, env);
+        //std::cout << acts[i] << " -> \n";
+        
+        //std::cout << env->getFrameNumber() << " -.- \n";
+        
+        //float reward = env->act(acts[i]) * cur_disc;
+        //ALEState nextState;
+        //if(nextState == env->cloneState) std::cout <<"WHAT" << "\n";
+        //if(reward != 0.0) std::cout << "algo hay" << "\n";
+        //if(env->game_over()) reward = -10000000;
+        //std::cout << env->getFrameNumber() << "\n";
+        //std::cout << acts[i] <<"\n";
+        Node * n_node = new Node(this, acts[i], cur_d, 0.0, cur_disc);
+        succs.push_back(n_node);
     }
     random_shuffle(succs.begin(), succs.end());
     childs = succs;

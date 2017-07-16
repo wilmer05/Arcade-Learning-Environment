@@ -1,19 +1,18 @@
 #include<queue>
 #include <ale_interface.hpp>
 #include"Node.hpp"
-#include <algorithm>
 #ifdef __USE_SDL
     #include<SDL.h>
 #endif
 #include<utility>
-#include <cmath>
-#include "iwAlgorithmRGB.hpp"
+#include <algorithm>
+#include "rolloutsAlgorithm.hpp"
 #include "constants.hpp"
 #include "utils.hpp"
 
-IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column_sz, int delta) {
+IWR::IWR(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column_sz, int delta) {
     features_type = ft;
-    q = std::queue<Node *>();
+    //q = std::queue<Node *>();
     env = ale;
     root = NULL;
     this -> fs = fs;
@@ -27,21 +26,18 @@ IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column
     novelty_table_basic.clear();
     int cnt = 0;
     while(1){
-        novelty_table_basic.push_back(std::vector< std::vector<std::vector<int> > >(c_number + 5, std::vector< std::vector<int> >(r_number + 5, std::vector<int>(k_different_colors, 0))));
+        novelty_table_basic.push_back(std::vector< std::vector<std::vector<int> > >(c_number + 5, std::vector< std::vector<int> >(r_number + 5, std::vector<int>(k_different_colors, 1000000))));
         cnt++;
-        if(features_type == 5 && cnt < 10) continue;
-        if(features_type == 5) break;
         if(cnt * displacement >= tile_row_size || !displacement) break;
     }
 
     number_of_tables = cnt;
-    if(features_type == 5) number_of_tables = 1;
-    std::cout << "Screen splitted in " << novelty_table_basic[0][0].size() - 1<< " rows and " << novelty_table_basic[0].size() - 1<< " columns and there are " << cnt << " displacements\n" ;
+    std::cout << "Screen splitted in " << novelty_table_basic[0][0].size() - 5<< " rows and " << novelty_table_basic[0].size() - 5<< " columns and there are " << cnt << " displacements\n" ;
 
     //std::cout <<novelty_table.size() << "\n";
 }
 
-/*void IWRGB::restore_state(Node *nod){
+/*void IWR::restore_state(Node *nod){
     Node * par = nod->get_parent();
     if(par != NULL){
         env->restoreState(par->get_state());
@@ -51,20 +47,18 @@ IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column
      }
 }*/
 
-void IWRGB::reset(){
+void IWR::reset(){
     if(root == NULL) {
         ActionVect v  = env->getMinimalActionSet();
-        root = new Node(NULL, v[0], env->cloneState(), 1, 0, 1);
-        best_node = new Node(NULL, v[0], env->cloneState(), -5000000, -5000000, -5000000);
+        root = new Node(NULL, v[0], 1, 0, 1);
+        best_node = new Node(NULL, v[0], -5000000, -5000000, -5000000);
     }
 
     for(int d =0 ; d < number_of_tables; d++)
         for(int i = 0; i<c_number + 2;i++) 
             for(int j = 0; j < r_number + 2; j++) 
-                for(int k = 0; k<k_different_colors;k++){ 
-                    novelty_table_basic[d][i][j][k]=false;
-                    if(features_type == 4) novelty_table_basic[d][i][j][k]=-1000000;
-                }
+                for(int k = 0; k<k_different_colors;k++) 
+                    novelty_table_basic[d][i][j][k]=1000000;
 
     if(compute_BPROS()){
          
@@ -78,66 +72,21 @@ void IWRGB::reset(){
     maximum_depth = 0;
 }
 
-float IWRGB::run() {
+float IWR::run() {
     reset();
-    Node *curr_node  = root;
-
-    std::vector<Node *> chs = curr_node->get_childs();
-    for(int i= 0 ; i< chs.size(); i++) {
-        //std::cout <<"Entre " << chs.size() << " " << chs[i]->tried << "\n";
-        chs[i]->count_nodes();
-    }
-    q.push(curr_node);
+    pruned = 0;
+    expanded = 0;
+    total_steps = 0;
+    ALEState root_state = env->cloneState();
     ActionVect v  = env->getMinimalActionSet();
-    int generated = 1;
-    int news = 0;
-    int pruned = 0 ;
-    int expanded = 0;
-    while(!q.empty()){
-       curr_node = q.front();
-       q.pop();
-       expanded ++;
-       if (maximum_depth < curr_node->get_depth()) maximum_depth = curr_node->get_depth();
-       if(best_node->get_reward_so_far() < curr_node->get_reward_so_far() && curr_node != root)
-            best_node = curr_node;
-       
-       bool leaf = curr_node->get_childs().size() == 0;
-       std::vector<Node *> succs;
-       if(curr_node->get_depth() < max_depth / this -> fs){
-            succs = curr_node->get_successors(env);
-       }
-       curr_node -> unset_count_in_novelty();
-
-       for(int i =0 ; i < succs.size() && generated < max_lookahead / this->fs; i++){
-           if(leaf) {
-                generated ++;
-			    if (check_and_update_novelty(succs[i]) != 1){
-				    succs[i]->set_is_terminal(true);
-                    succs[i]->tried++;
-				    //pruned++;
-			    } else {
-                    succs[i]->tried = 0;
-                    succs[i]->set_is_terminal(false);
-                }
-           } else{
-                if(succs[i] -> get_is_terminal()){
-                      if(check_and_update_novelty(succs[i]) == 1){
-                        //add_to_novelty_table(fs);
-                        succs[i]->set_is_terminal(false);
-                      } else{
-                        //pruned++;
-                        succs[i]->set_is_terminal(true);
-                      }
-                }
-            }
-           if((!succs[i]->get_is_terminal() /*|| (leaf && succs[i]->tried * this->fs < 30)*/) && !succs[i]->test_duplicate() && succs[i]->reused_nodes < max_lookahead  / this->fs) q.push(succs[i]);
-           else pruned++;
-     //      else if(succs[i]->reused_nodes >= max_lookahead) std::cout <<"Obviado para busqueda\n";
-         }
-            
+    Node * bla;
+    //int cnt = 0;
+    while(rollout() != root) {
+        //env->act(v[0]);
+        env->restoreState(root_state);
     }
     std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << best_node -> get_reward_so_far() << std::endl;
-    std::cout<< "Generated nodes: " << generated << std::endl;
+    //std::cout<< "Generated nodes: " << generated << std::endl;
     std::cout <<"Expanded nodes:" << expanded << "\n";
     std::cout<< "Pruned nodes: " << pruned << std::endl;
     std::cout<< "Maximum depth: " << maximum_depth << std::endl;
@@ -146,52 +95,131 @@ float IWRGB::run() {
     Action best_act = best_node -> get_action();
 
     std::vector<Node *> ch = root->get_childs();
-    restore_state(root, env);
+    //restore_state(root, env);
+    env->restoreState(root_state);
+
     float rw = env->act(best_act);
-    for(int i =0 ; i<ch.size(); i++) {
-        if(ch[i] != best_node) 
-            remove_tree(ch[i]);
-        else {
+    //for(int i =0 ; i<ch.size(); i++) {
+        //if(ch[i] != best_node) 
+            remove_tree(root);
+        /*else {
             //std::cout <<"Si hay un nuevo buen root\n";
             update_tree(ch[i], rw);
-        }
-    }
-    root = best_node;
-    best_node = tmp_node;
-    if(root == best_node){ 
-        best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), -5000000, -5000000, -5000000);
-        std::cout <<"Best node restarted\n";
-    }
+        }*/
+    //}
+
+    
+
+    //Node *tmp_node = best_node;
+    root = NULL;
+    //best_node = tmp_node;
+    //if(root == best_node){ 
+        best_node = new Node(NULL, v[rand() % v.size()], -5000000, -5000000, -5000000);
+    //    std::cout <<"Best node restarted\n";
+    //}
     std::cout <<"Best action: " << best_act << std::endl;
     return rw;
 }
 
-void IWRGB::remove_tree(Node * nod){
+bool IWR::solved_node(Node * n) { 
+        if(n->solved) return true;
+        std::vector<Node *> chs = n -> get_stateless_successors(env);
+        bool solved = true;
+        for(int i =0 ; i < chs.size() && solved; i++){
+           solved = solved && chs[i]->solved; 
+        }
+        //std::cout <<solved << "\n";  
+        return solved;
+}
+
+Node * IWR::propagate_solved(Node *nod){
+    nod -> solved = true; 
+    Node * last_solved = nod;
+    while(nod != NULL && nod -> get_depth() >= 1){
+        if(solved_node(nod)){
+        //std::cout <<nod->get_depth() << "\n";
+           nod->solved = true; 
+           last_solved = nod;
+           nod = nod->get_parent();
+        } else break;
+    }
+    //std::cout <<last_solved << "\n";
+    return last_solved;
+} 
+
+Node * IWR::rollout() {
+    
+    Node *curr_node  = root;
+    while(1){
+
+        if(!curr_node -> in_tree){ 
+            expanded++;
+            total_steps++;
+        }
+
+        curr_node -> in_tree = true;
+        if(curr_node -> get_depth() >=  max_depth / this -> fs || solved_node(curr_node) || total_steps * this->fs >= max_lookahead){
+            return propagate_solved(curr_node);
+        }
+        std::vector<Node *> chs = curr_node -> get_stateless_successors(env);
+        random_shuffle(chs.begin(), chs.end());
+        int i;
+        for(i =0 ; i < chs.size(); i++){
+           if(!chs[i]->solved){
+                break; 
+           } 
+        }
+        //std::cout << i << " " << chs.size() << "\n";
+        float rw_so_far = curr_node->get_reward_so_far();
+        curr_node = chs[i];
+        float tmp_rw = env->act(curr_node -> get_action());
+        //std::cout << env->getFrameNumber() << "\n";
+        //std::cout << curr_node -> get_action() << "\n";
+        //tmp_rw = env->act(curr_node -> get_action());
+
+        float rw = rw_so_far + curr_node->get_discount() * tmp_rw;
+        //std::cout <<env->getFrameNumber() << "\n";
+        curr_node->set_rw(rw); 
+        
+        //std::cout << "DUCK\n";
+        basic_table_t fs = get_features(); 
+        //std::cout << nv << "\n";
+        if(curr_node != root && novelty(curr_node, fs) != 1 && (!curr_node->in_tree || !equal_atom_flag)){
+                pruned++;
+                return propagate_solved(curr_node);
+        }
+        if(curr_node -> get_reward_so_far() >= best_node->get_reward_so_far()) best_node = curr_node; 
+        //std::cout << "DUCK x 2\n";
+    }
+
+}
+
+void IWR::remove_tree(Node * nod){
     std::vector<Node *> ch = nod->get_childs();
     for(int i =0 ; i< ch.size(); i++) remove_tree(ch[i]);
     delete nod;
 }
 
-void IWRGB::update_tree(Node *nod, float reward){
+/*void IWR::update_tree(Node *nod, float reward){
     std::vector<Node *> ch = nod->get_childs();
     for(int i =0 ; i< ch.size(); i++) 
         if(!ch[i]->get_is_duplicate())update_tree(ch[i], reward);
     nod->set_depth(nod->get_depth() - 1);
     nod->set_reward_so_far(reward);
-}
-int IWRGB::check_and_update_novelty( Node * nod){
+}*/
+int IWR::check_and_update_novelty( Node * nod){
 
     restore_state(nod, env);
     basic_table_t fs = get_features(); 
 
     return novelty(nod, fs);
 }
-basic_table_t IWRGB::get_features(){
+basic_table_t IWR::get_features(){
     std::vector<byte_t> screen;
     env->getScreenGrayscale(screen);
-
-    
-    
+    /*for(int i =0 ;i < screen.size(); i++) {
+        std::cout << (int)screen[i] << " " ;
+    }*/
     basic_table_t v(number_of_tables ,std::vector< std::vector<std::set<int> > >(c_number + 2, std::vector<std::set<int> >(r_number + 2, std::set<int>())));
     for(int d =0 ; d < number_of_tables; d++)
         for(int i=0; i<screen.size(); i++){
@@ -205,13 +233,15 @@ basic_table_t IWRGB::get_features(){
     return v;
 }
 
-int IWRGB::novelty(Node * nod, basic_table_t &fs){
+int IWR::novelty(Node * nod, basic_table_t &fs){
     int nov = 1e9;
+    equal_atom_flag = false;
     std::set<int>::iterator it, it2, it3;
 //    std::cout << sz1 << " " << sz2 << "\n";
     basic_table_t fs_parent;
     Node *par;
-    if(features_type == 3 || features_type == 5){
+    //std::cout <<"Duck\n";
+    /*if(features_type == 3){
         par = nod;
         int cnt = 0;
         while(par != NULL && cnt++ < 4){
@@ -221,26 +251,22 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
             restore_state(par, env);
             fs_parent = get_features();
         }
-    }
-
-    int sz1 = fs[0].size(); int sz2 = fs[0][0].size();
+    }*/
     for(int d =0 ; d < number_of_tables; d++){
+        int sz1 = fs[d].size(); int sz2 = fs[d][0].size();
         for(int i =0 ; i< sz1;i++){
             for(int j = 0 ; j < sz2; j++){
                 it = fs[d][i][j].begin();
                 while(it != fs[d][i][j].end()){
-                    if((features_type < 4 || (features_type == 5 && !d))&& novelty_table_basic[d][i][j][*it] == 0){
-                        nov = 1;
-                        total_features++;
-                        novelty_table_basic[d][i][j][*it] = 1;
+                    if(novelty_table_basic[d][i][j][*it] == nod->get_depth()){
+                        equal_atom_flag = true;
                     }
-                    else if(features_type == 4 && novelty_table_basic[d][i][j][*it] < (int) ceil(nod->get_reward_so_far())){
-                        //std::cout << "Era: " << novelty_table_basic[d][i][j][*it] << " y ahora: " << (int) ceil(nod->get_reward_so_far()) ;
-                        novelty_table_basic[d][i][j][*it] = (int)ceil(nod->get_reward_so_far());
+                    //std::cout <<nod->get_depth() << " " <<novelty_table_basic[d][i][j][*it] <<"\n";
+                    if(novelty_table_basic[d][i][j][*it] > nod->get_depth()){
                         nov = 1;
+                        novelty_table_basic[d][i][j][*it] = nod->get_depth();
                         total_features++;
                     }
-                    
                     //std::cout << i << " ---  " <<  j << "\n";
                     if(!d && compute_BPROS()){
                         //std::cout << "BPROS" << "\n";
@@ -285,32 +311,6 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
                 }
             }
         }
-    }
-
-    if(features_type == 5 && par != NULL){
-        for(int i = 0 ; i< sz1; i++)
-            for(int j = 0 ; j < sz2; j++) {
-                int most_similar = 0;
-                int similarity = 0;
-                it = fs[0][i][j].begin();
-
-                while(it!=fs[0][i][j].end()){
-
-                    for(int k = 0 ; k < 9; k++){
-                        int dx = k/3 - 1;
-                        int dy = k%3 - 1;
-                        if(dx < 0 || dy < 0 || i + dx > sz1 || j + dy > sz2) continue;
-                        if(fs_parent[0][i+dx][j+dy].count(*it) && novelty_table_basic[k+1][i][j][*it] == 0){
-                            novelty_table_basic[k+1][i][j][*it] = 1;
-                            nov = 1;
-                            break;
-                            //std::cout <<"WORKS\n";
-                        } 
-                    }
-                    it++;
-                }
-            }
-
     }
 
     //if(nov==1)
