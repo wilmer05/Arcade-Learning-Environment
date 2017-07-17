@@ -59,6 +59,7 @@ class IWRGB{
         int r_number;
         int displacement;
         int number_of_tables;
+        int number_of_displacements;
         int total_features;
 
 

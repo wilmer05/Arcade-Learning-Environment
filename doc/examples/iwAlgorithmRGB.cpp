@@ -30,13 +30,15 @@ IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column
         novelty_table_basic.push_back(std::vector< std::vector<std::vector<int> > >(c_number + 5, std::vector< std::vector<int> >(r_number + 5, std::vector<int>(k_different_colors, 0))));
         cnt++;
         if(features_type == 5 && cnt < 10) continue;
-        if(features_type == 5) break;
-        if(cnt * displacement >= tile_row_size || !displacement) break;
+        if(features_type == 6 && cnt < 4) continue;
+        if(features_type == 7 && cnt < 14) continue;
+        if(features_type >= 5 || cnt * displacement >= tile_row_size || !displacement) break;
     }
 
     number_of_tables = cnt;
-    if(features_type == 5) number_of_tables = 1;
-    std::cout << "Screen splitted in " << novelty_table_basic[0][0].size() - 1<< " rows and " << novelty_table_basic[0].size() - 1<< " columns and there are " << cnt << " displacements\n" ;
+    number_of_displacements = cnt;
+    if(features_type >= 5) number_of_displacements = 1;
+    std::cout << "Screen splitted in " << novelty_table_basic[0][0].size() - 5<< " rows and " << novelty_table_basic[0].size() - 5<< " columns and there are " << cnt << " displacements\n" ;
 
     //std::cout <<novelty_table.size() << "\n";
 }
@@ -132,7 +134,6 @@ float IWRGB::run() {
             }
            if((!succs[i]->get_is_terminal() /*|| (leaf && succs[i]->tried * this->fs < 30)*/) && !succs[i]->test_duplicate() && succs[i]->reused_nodes < max_lookahead  / this->fs) q.push(succs[i]);
            else pruned++;
-     //      else if(succs[i]->reused_nodes >= max_lookahead) std::cout <<"Obviado para busqueda\n";
          }
             
     }
@@ -152,7 +153,6 @@ float IWRGB::run() {
         if(ch[i] != best_node) 
             remove_tree(ch[i]);
         else {
-            //std::cout <<"Si hay un nuevo buen root\n";
             update_tree(ch[i], rw);
         }
     }
@@ -189,11 +189,9 @@ int IWRGB::check_and_update_novelty( Node * nod){
 basic_table_t IWRGB::get_features(){
     std::vector<byte_t> screen;
     env->getScreenGrayscale(screen);
-
     
-    
-    basic_table_t v(number_of_tables ,std::vector< std::vector<std::map<int, int> > >(c_number + 2, std::vector<std::map<int, int > >(r_number + 2, std::map<int, int>())));
-    for(int d =0 ; d < number_of_tables; d++)
+    basic_table_t v(number_of_displacements ,std::vector< std::vector<std::map<int, int> > >(c_number + 2, std::vector<std::map<int, int > >(r_number + 2, std::map<int, int>())));
+    for(int d =0 ; d < number_of_displacements; d++)
         for(int i=0; i<screen.size(); i++){
 
             int c = (i % 160) / tile_column_size;
@@ -215,7 +213,8 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
 //    std::cout << sz1 << " " << sz2 << "\n";
     basic_table_t fs_parent;
     Node *par;
-    if(features_type == 3 || features_type == 5){
+    //std::cout <<"Entre\n";
+    if(features_type == 3 || features_type == 5 || features_type == 7){
         par = nod;
         int cnt = 0;
         while(par != NULL && cnt++ < 4){
@@ -228,12 +227,12 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
     }
 
     int sz1 = fs[0].size(); int sz2 = fs[0][0].size();
-    for(int d =0 ; d < number_of_tables; d++){
+    for(int d =0 ; d < number_of_displacements; d++){
         for(int i =0 ; i< sz1;i++){
             for(int j = 0 ; j < sz2; j++){
                 it = fs[d][i][j].begin();
                 while(it != fs[d][i][j].end()){
-                    if((features_type < 4 || (features_type == 5 && !d))&& novelty_table_basic[d][i][j][it->first] == 0){
+                    if((features_type < 4 || (features_type == 5 && !d)) && novelty_table_basic[d][i][j][it->first] == 0){
                         nov = 1;
                         total_features++;
                         novelty_table_basic[d][i][j][it->first] = 1;
@@ -243,6 +242,23 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
                         novelty_table_basic[d][i][j][it -> first] = (int)ceil(nod->get_reward_so_far());
                         nov = 1;
                         total_features++;
+                    } else if( (features_type == 6 || features_type == 7) && !d){
+                        int begin = 0;
+                        if(7 == features_type) begin = 10;
+
+                        int cnt = it -> second;
+                        int color_relevance  = k_non_existent_color;
+                        int total_pixels = tile_row_size * tile_column_size;
+                        if(cnt && cnt * (100/k_several_existent_color_percentage) < total_pixels) color_relevance = k_few_existent_color;
+                        else if(cnt && cnt * (100/k_relevant_color_percentage) < total_pixels) color_relevance = k_several_existent_color;
+                        else if(cnt) color_relevance = k_relevant_color;
+
+                        //std::cout <<"Entre2\n";
+                        if(novelty_table_basic[begin + color_relevance][i][j][it->first] == 0){
+                            nov = 1;
+                            novelty_table_basic[begin + color_relevance][i][j][it->first]=1;
+                        }
+                        //std::cout <<"Sali2\n";
                     }
                     
                     //std::cout << i << " ---  " <<  j << "\n";
@@ -291,7 +307,7 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
         }
     }
 
-    if(features_type == 5 && par != NULL){
+    if((features_type == 5 || features_type == 7) && par != NULL){
         for(int i = 0 ; i< sz1; i++)
             for(int j = 0 ; j < sz2; j++) {
                 int most_similar = 0;
@@ -300,29 +316,34 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
 
                 while(it!=fs[0][i][j].end()){
 
+                    //std::cout <<"BLA1\n";
+                    //std::cout << fs_parent[0].size() << " " << sz1 << " " << fs_parent[0][0].size() << " " << sz2 << "\n";;
                     for(int k = 0 ; k < 9; k++){
                         int dx = k/3 - 1;
                         int dy = k%3 - 1;
-                        if(dx < 0 || dy < 0 || i + dx > sz1 || j + dy > sz2) continue;
+                        if( i + dx < 0 || j + dy < 0 || i + dx > sz1 || j + dy > sz2) continue;
                         double dist = pow(it->second - fs_parent[0][i+dx][j+dy][it->first], 2.0);
                         if(dist < similarity){
+                            //std::cout << dist << "\n";
                             similarity = dist;
-                            most_similar = k;
+                            most_similar = k+1;
                         }
                         
                     }
+                    //std::cout <<"BLA2\n";
                     if(novelty_table_basic[most_similar][i][j][it->first] == 0){
                             novelty_table_basic[most_similar][i][j][it -> first] = 1;
                             nov = 1;
                     } 
 
                     it++;
+
                 }
             }
 
     }
 
     //if(nov==1)
-    //    std::cout << nov << " \n";
+//    std::cout << "Sali\n";
     return nov;
 }
