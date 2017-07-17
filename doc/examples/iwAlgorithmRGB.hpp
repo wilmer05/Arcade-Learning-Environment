@@ -8,9 +8,9 @@
 #include<set>
 #include"constants.hpp"
 #include"utils.hpp"
-
+#include <map>
 typedef unsigned char byte_t;
-typedef std::vector<std::vector<std::vector< std::set<int> > > > basic_table_t;
+typedef std::vector<std::vector<std::vector< std::map<int, int> > > > basic_table_t;
 #define RAM_FEATURES 1
 #ifndef DEF_IW_RGB
 #define DEF_IW_RGB

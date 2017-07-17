@@ -192,14 +192,18 @@ basic_table_t IWRGB::get_features(){
 
     
     
-    basic_table_t v(number_of_tables ,std::vector< std::vector<std::set<int> > >(c_number + 2, std::vector<std::set<int> >(r_number + 2, std::set<int>())));
+    basic_table_t v(number_of_tables ,std::vector< std::vector<std::map<int, int> > >(c_number + 2, std::vector<std::map<int, int > >(r_number + 2, std::map<int, int>())));
     for(int d =0 ; d < number_of_tables; d++)
         for(int i=0; i<screen.size(); i++){
 
             int c = (i % 160) / tile_column_size;
             int r = (i / 160 + d * displacement) / tile_row_size;
 
-            v[d][c][r].insert((int)screen[i]);
+            if(!v[d][c][r].count((int)screen[i]))
+                v[d][c][r][(int)screen[i]] = 1;
+            else 
+                v[d][c][r][(int)screen[i]]++;
+            //v[d][c][r].insert((int)screen[i]);
 
         } 
     return v;
@@ -207,7 +211,7 @@ basic_table_t IWRGB::get_features(){
 
 int IWRGB::novelty(Node * nod, basic_table_t &fs){
     int nov = 1e9;
-    std::set<int>::iterator it, it2, it3;
+    std::map<int, int>::iterator it, it2, it3;
 //    std::cout << sz1 << " " << sz2 << "\n";
     basic_table_t fs_parent;
     Node *par;
@@ -229,14 +233,14 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
             for(int j = 0 ; j < sz2; j++){
                 it = fs[d][i][j].begin();
                 while(it != fs[d][i][j].end()){
-                    if((features_type < 4 || (features_type == 5 && !d))&& novelty_table_basic[d][i][j][*it] == 0){
+                    if((features_type < 4 || (features_type == 5 && !d))&& novelty_table_basic[d][i][j][it->first] == 0){
                         nov = 1;
                         total_features++;
-                        novelty_table_basic[d][i][j][*it] = 1;
+                        novelty_table_basic[d][i][j][it->first] = 1;
                     }
-                    else if(features_type == 4 && novelty_table_basic[d][i][j][*it] < (int) ceil(nod->get_reward_so_far())){
+                    else if(features_type == 4 && novelty_table_basic[d][i][j][it -> first] < (int) ceil(nod->get_reward_so_far())){
                         //std::cout << "Era: " << novelty_table_basic[d][i][j][*it] << " y ahora: " << (int) ceil(nod->get_reward_so_far()) ;
-                        novelty_table_basic[d][i][j][*it] = (int)ceil(nod->get_reward_so_far());
+                        novelty_table_basic[d][i][j][it -> first] = (int)ceil(nod->get_reward_so_far());
                         nov = 1;
                         total_features++;
                     }
@@ -249,8 +253,8 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
                                 if(features_type == 3 && par != NULL){
                                     it3 = fs_parent[0][i2][j2].begin();
                                     while(it3 != fs_parent[0][i2][j2].end()){
-                                        int k1 = *it;
-                                        int k2 = *it3;
+                                        int k1 = it -> first;
+                                        int k2 = it3 -> first;
                                         int cc = i - i2 + k_novelty_columns;
                                         int rr = j - j2 + k_novelty_rows;
                                         //std::cout << k1 << " " << k2 << " " << cc << " " << rr << "\n";
@@ -266,8 +270,8 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
                                 if(j2 < j || (j2 == j && i2 <= i)) continue;
                                 it2 = fs[d][i2][j2].begin();
                                 while(it2 != fs[d][i2][j2].end()){
-                                    int k1 = *it;
-                                    int k2 = *it2;
+                                    int k1 = it -> first;
+                                    int k2 = it2 -> first;
                                     int cc = i - i2 + k_novelty_columns;
                                     int rr = j - j2 + k_novelty_rows;
                                     if(novelty_table_bpros[k1][k2][cc][rr] == 0){
@@ -291,7 +295,7 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
         for(int i = 0 ; i< sz1; i++)
             for(int j = 0 ; j < sz2; j++) {
                 int most_similar = 0;
-                int similarity = 0;
+                double similarity = 100000000.0;
                 it = fs[0][i][j].begin();
 
                 while(it!=fs[0][i][j].end()){
@@ -300,13 +304,18 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
                         int dx = k/3 - 1;
                         int dy = k%3 - 1;
                         if(dx < 0 || dy < 0 || i + dx > sz1 || j + dy > sz2) continue;
-                        if(fs_parent[0][i+dx][j+dy].count(*it) && novelty_table_basic[k+1][i][j][*it] == 0){
-                            novelty_table_basic[k+1][i][j][*it] = 1;
-                            nov = 1;
-                            break;
-                            //std::cout <<"WORKS\n";
-                        } 
+                        double dist = pow(it->second - fs_parent[0][i+dx][j+dy][it->first], 2.0);
+                        if(dist < similarity){
+                            similarity = dist;
+                            most_similar = k;
+                        }
+                        
                     }
+                    if(novelty_table_basic[most_similar][i][j][it->first] == 0){
+                            novelty_table_basic[most_similar][i][j][it -> first] = 1;
+                            nov = 1;
+                    } 
+
                     it++;
                 }
             }
