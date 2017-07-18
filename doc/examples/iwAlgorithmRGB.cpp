@@ -189,13 +189,16 @@ int IWRGB::check_and_update_novelty( Node * nod){
 basic_table_t IWRGB::get_features(){
     std::vector<byte_t> screen;
     env->getScreenGrayscale(screen);
-    
-    basic_table_t v(number_of_displacements ,std::vector< std::vector<std::map<int, int> > >(c_number + 2, std::vector<std::map<int, int > >(r_number + 2, std::map<int, int>())));
+    std::cout << "entre get_feat\n"; 
+    basic_table_t v(number_of_displacements ,std::vector< std::vector<std::map<int, int> > >(c_number + 5, std::vector<std::map<int, int > >(r_number + 5, std::map<int, int>())));
     for(int d =0 ; d < number_of_displacements; d++)
         for(int i=0; i<screen.size(); i++){
 
             int c = (i % 160) / tile_column_size;
             int r = (i / 160 + d * displacement) / tile_row_size;
+
+            std::cout << c << " " << r << " -- " << c_number << " " << r_number << "\n";
+
 
             if(!v[d][c][r].count((int)screen[i]))
                 v[d][c][r][(int)screen[i]] = 1;
@@ -204,6 +207,7 @@ basic_table_t IWRGB::get_features(){
             //v[d][c][r].insert((int)screen[i]);
 
         } 
+    std::cout << "sali get_feat\n"; 
     return v;
 }
 

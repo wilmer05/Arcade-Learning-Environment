@@ -1,7 +1,7 @@
 # We do not automatically build the recording agent, which requires SDL. To build it, run
 #
 # > make recordingAgent
-all: sharedLibraryAgent rlglueAgent fifoAgent iwAgent iwAgentRGB rolloutsAgent
+all: sharedLibraryAgent rlglueAgent fifoAgent iwAgent iwAgentRGB rolloutsAgent simulatorAgent
 
 sharedLibraryAgent: 
 	make -f Makefile.sharedlibrary
@@ -23,6 +23,10 @@ iwAgentRGB:
 
 rolloutsAgent:
 	make -f Makefile.rolloutsAgent
+
+simulatorAgent:
+	make -f Makefile.simulatorAgent
+
 clean:
 	make -f Makefile.rlglue clean
 	make -f Makefile.sharedlibrary clean
@@ -31,3 +35,5 @@ clean:
 	make -f Makefile.iwAgent clean
 	make -f Makefile.iwAgentRGB clean
 	make -f Makefile.rolloutsAgent clean
+	make -f Makefile.simulatorAgent clean
+
