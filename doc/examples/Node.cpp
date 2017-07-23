@@ -6,13 +6,14 @@
 #include"Node.hpp"
 #include "constants.hpp"
 #include<algorithm>
-Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double disc) {
+Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double disc, std::vector<byte_t> the_ram) {
     parent = par;
     state = ale_state;
     depth = d;
     reward_so_far = rew;
     discount = disc;
     action = act;
+    this -> ram = the_ram;
     childs = std::vector<Node *>();
     count_in_novelty = true;
     is_terminal = false;
@@ -67,7 +68,12 @@ Node * Node::generate_child_with_same_action(ALEInterface * env){
         if(env->game_over()){
             reward = -10000000;
         }
-        nod = new Node(this, a, nextState, cur_d, reward_so_far + reward, cur_disc);
+        const ALERAM &ram = env->getRAM();
+        std::vector<byte_t> v;
+        for(int i = 0 ; i < RAM_SIZE; i++){
+            v.push_back(ram.get(i));
+        }
+nod = new Node(this, a, nextState, cur_d, reward_so_far + reward, cur_disc, v);
         this -> childs.push_back(nod);
     }
     
@@ -155,7 +161,12 @@ std::vector<Node *> Node::get_successors(ALEInterface *env){
         if(env->game_over()) reward = -10000000;
         //std::cout << env->getFrameNumber() << "\n";
         //std::cout << acts[i] <<"\n";
-        succs.push_back(new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc));
+        const ALERAM &ram = env->getRAM();
+        std::vector<byte_t> v;
+       for(int i = 0 ; i < RAM_SIZE; i++){
+            v.push_back(ram.get(i));
+        }
+        succs.push_back(new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc, v));
     }
     random_shuffle(succs.begin(), succs.end());
     childs = succs;

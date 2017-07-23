@@ -28,7 +28,7 @@ class IW{
         int check_and_update_novelty(Node *);
 
     private:
-        std::vector<std::pair<int,byte_t> > get_features();
+        std::vector<std::pair<int,byte_t> > get_features(Node *);
         int novelty(std::vector<std::pair<int,byte_t> > fs);
         void add_to_novelty_table( std::vector<std::pair<int,byte_t> > fs );
         void remove_tree(Node *); 

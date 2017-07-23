@@ -9,7 +9,7 @@
 class Node{
     public:
 
-        Node(Node* par, Action act, ALEState ale_state, int d, double rew, double discs);
+        Node(Node* par, Action act, ALEState ale_state, int d, double rew, double discs, std::vector<byte_t> r);
 
         Node(Node* par, Action act, int d, double rew, double discs);
 
@@ -43,7 +43,7 @@ class Node{
         void restore_state(Node *nod, ALEInterface *env);
         bool get_is_terminal() {return is_terminal;}
         void set_is_terminal(bool v) { is_terminal = v;}
-       double get_discount() { return discount; }
+        double get_discount() { return discount; }
 
         bool get_is_duplicate() { return is_duplicate;}
         void set_is_duplicate(bool v) { is_duplicate = v; }
@@ -56,7 +56,7 @@ class Node{
         bool solved;
         bool in_tree;
         bool must_be_prunned;
-
+        std::vector<byte_t> ram;
     private:
 
         Node *parent;

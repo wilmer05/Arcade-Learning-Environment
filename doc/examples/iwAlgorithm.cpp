@@ -7,7 +7,7 @@
 #include<utility>
 #include "iwAlgorithm.hpp"
 #include "constants.hpp"
-
+#include <valgrind/callgrind.h>
 
 IW::IW(int ft, ALEInterface *ale) {
     features_type = ft;
@@ -32,8 +32,9 @@ void IW::restore_state(Node *nod){
 void IW::reset(){
     if(root == NULL) {
         ActionVect v  = env->getMinimalActionSet();
-        root = new Node(NULL, v[0], env->cloneState(), 1, 0, 1);
-        best_node = new Node(NULL, v[0], env->cloneState(), -5000000, -5000000, -5000000);
+        std::vector<byte_t> dummy_v;
+        root = new Node(NULL, v[0], env->cloneState(), 1, 0, 1, dummy_v);
+        best_node = new Node(NULL, v[0], env->cloneState(), -5000000, -5000000, -5000000, dummy_v);
     }
     for(int i = 0; i<300;i++) for(int j = 0; j < 300; j++) novelty_table[i][j]=0;
 }
@@ -62,6 +63,7 @@ float IW::run() {
     int news = 0;
     int pruned = 0 ;
     int expanded = 0;
+    CALLGRIND_START_INSTRUMENTATION;
     while(!q.empty()){
        curr_node = q.front();
        q.pop();
@@ -123,6 +125,8 @@ float IW::run() {
          }
             
     }
+    CALLGRIND_STOP_INSTRUMENTATION;
+    CALLGRIND_DUMP_STATS;
     std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << best_node -> get_reward_so_far() << std::endl;
     std::cout<< "Generated nodes: " << generated << std::endl;
     std::cout <<"Expanded nodes:" << expanded << "\n";
@@ -146,8 +150,9 @@ float IW::run() {
     }
     root = best_node;
     best_node = tmp_node;
+    std::vector<byte_t> dummy_v;
     if(root == best_node){ 
-        best_node = new Node(NULL, v[0], env->cloneState(), -5000000, -5000000, -5000000);
+        best_node = new Node(NULL, v[0], env->cloneState(), -5000000, -5000000, -5000000, dummy_v);
         std::cout <<"Best node restarted\n";
     }
     std::cout <<"Best action: " << best_act << std::endl;
@@ -169,8 +174,8 @@ void IW::update_tree(Node *nod, float reward){
 }
 int IW::check_and_update_novelty( Node * nod){
 
-    restore_state(nod);
-    std::vector<std::pair<int,byte_t> > fs = get_features(); 
+    //restore_state(nod);
+    std::vector<std::pair<int,byte_t> > fs = get_features(nod); 
     int nov = novelty(fs);
     /*if ( nov == 1 ) {
 	    add_to_novelty_table(fs);
@@ -178,17 +183,17 @@ int IW::check_and_update_novelty( Node * nod){
 
     return nov;
 }
-std::vector<std::pair<int,byte_t> > IW::get_features(){
-    std::vector<std::pair<int,byte_t> > fs;
-    if (features_type == RAM_FEATURES){
+std::vector<std::pair<int,byte_t> > IW::get_features(Node *nod){
 
-        const ALERAM &ram = env->getRAM();
-        fs = std::vector<std::pair<int,byte_t> >();
-        for(int i = 0 ; i < RAM_SIZE; i++){
-            fs.push_back(std::make_pair (i, ram.get(i)));
-        }
+    std::vector<std::pair<int,byte_t> > fs;
+    //if (features_type == RAM_FEATURES){
+
+   std::vector<byte_t> &ram = nod->ram;;
+   fs = std::vector<std::pair<int,byte_t> >();
+   for(int i = 0 ; i < RAM_SIZE; i++){
+       fs.push_back(std::make_pair (i, ram[i]));
+   }
     
-    }
 
     return fs;
 }
