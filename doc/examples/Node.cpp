@@ -20,6 +20,7 @@ Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double 
     reused_nodes = 0;
     tried = 0;
     in_tree = false;
+    must_be_prunned = false;
     /*std::cout << parent << std::endl;
     std::cout << depth << std::endl;
     std::cout << rew << std::endl;
@@ -49,6 +50,30 @@ Node::Node(Node* par, Action act, int d, double rew, double disc) {
     std::cout << act << std::endl;*/
 }
 
+Node * Node::generate_child_with_same_action(ALEInterface * env){
+    Action a = this -> action;
+    Node *nod = NULL;
+
+    if(this->childs.size()==1) return this->childs[0];
+    if(this->childs.size() > 0) return nod;
+
+    env->restoreState(this->state);
+    
+    int cur_d = depth + 1;
+    double cur_disc = discount * discount_reward;
+    if(!env->game_over()){
+        float reward = env->act(a) * cur_disc;
+        ALEState nextState = env->cloneState();
+        if(env->game_over()){
+            reward = -10000000;
+        }
+        nod = new Node(this, a, nextState, cur_d, reward_so_far + reward, cur_disc);
+        this -> childs.push_back(nod);
+    }
+    
+
+    return nod;
+}
 
 ALEState Node::get_state(){
     return this->state;
@@ -100,8 +125,9 @@ std::vector<Node *> Node::get_successors(ALEInterface *env){
         return succs;
     }*/
 
-    restore_state(this, env);
+    //restore_state(this, env);
 
+    env->restoreState(this->get_state());
     ActionVect acts = env->getMinimalActionSet();
 
     int cur_d = depth + 1;
@@ -111,8 +137,11 @@ std::vector<Node *> Node::get_successors(ALEInterface *env){
     if(env->game_over()){ 
         return succs;
     }
+    ALEState node_state = this->get_state();
     for(int i = 0; i < acts.size(); i++) {
-        restore_state(this, env);
+        //restore_state(this, env);
+        if(i)
+            env->restoreState(node_state);
         //std::cout << acts[i] << " -> \n";
         
         //std::cout << env->getFrameNumber() << " -.- \n";
@@ -121,6 +150,8 @@ std::vector<Node *> Node::get_successors(ALEInterface *env){
         ALEState nextState = env->cloneState();
         //if(nextState == env->cloneState) std::cout <<"WHAT" << "\n";
         //if(reward != 0.0) std::cout << "algo hay" << "\n";
+        //if(nextState.equals(node_state))
+        //    continue;
         if(env->game_over()) reward = -10000000;
         //std::cout << env->getFrameNumber() << "\n";
         //std::cout << acts[i] <<"\n";

@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     ALEInterface ale;
 
     // Get & Set the desired settings
-    ale.setInt("frame_skip", 5);
+    ale.setInt("frame_skip", atoi(argv[2]));
     ale.setInt("random_seed", 123);
     //The default is already 0.25, this is just an example
     ale.setFloat("repeat_action_probability", 0.0);
@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
     float totalReward = 0;
     int episode;
     ActionVect legal_actions = ale.getLegalActionSet();
+    //for(int i =0 ; i < legal_actions.size(); i++) cout << legal_actions[i] << "\n";
     //IW iw = IW(1, &ale);
     int act;
     float rw = 0.0;
@@ -76,12 +77,14 @@ int main(int argc, char** argv) {
         cin >> act;
         //cout << act <<"\n";
         rw += ale.act(legal_actions[act]);
-        cout << ale.lives() << "\n";
+        //ale.render()
+        //cout << ale.lives() << "\n";
         //cout << ale.getFrameNumber() << "\n";
-        cout << "Reward so far: " << rw << "\n";
+        //cout << "Reward so far: " << rw << "\n";
         //cout << "Step number " << episode  + 1<< " ended with score: " << totalReward << endl;
         //cout <<"Elapsed time: " << difftime(end,start) << endl;
     }
+    cout << rw << endl;
     if(episode == max_steps) cout << "Ended by number of steps\n";
     else cout <<"Ended by game over \n";
     return 0;

@@ -5,7 +5,7 @@ ALE := ../..
 
 FLAGS := -I$(ALE)/src -I$(ALE)/src/controllers -I$(ALE)/src/os_dependent -I$(ALE)/src/environment -I$(ALE)/src/external -L$(ALE)
 CXX := g++
-FILE := simulatorAgent
+FILE := SimulatorAgent
 LDFLAGS := -lale -lz
 
 UNAME_S := $(shell uname -s)
@@ -22,10 +22,10 @@ ifeq ($(strip $(USE_SDL)), 1)
   LDFLAGS += $(shell sdl-config --libs)
 endif
 
-all: simulatorAgent
+all: SimulatorAgent
 
-simulatorAgent:
+SimulatorAgent:
 	$(CXX) $(DEFINES) $(FLAGS) $(FILE).cpp Node.cpp iwAlgorithm.cpp utils.cpp $(LDFLAGS) -o $(FILE)
 
 clean:
-	rm -rf simulatorAgent *.o
+	rm -rf SimulatorAgent *.o

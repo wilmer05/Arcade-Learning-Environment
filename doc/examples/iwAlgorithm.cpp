@@ -65,7 +65,7 @@ float IW::run() {
     while(!q.empty()){
        curr_node = q.front();
        q.pop();
-       expanded ++;
+       expanded++;
        if (maximum_depth < curr_node->get_depth()) maximum_depth = curr_node->get_depth();
        if(best_node->get_reward_so_far() < curr_node->get_reward_so_far() && curr_node != root)
             best_node = curr_node;
@@ -118,7 +118,7 @@ float IW::run() {
            // }
            // else pruned ++;
             }
-           if(!succs[i]->get_is_terminal() && !succs[i]->test_duplicate() && succs[i]->reused_nodes < max_lookahead / this->fs) q.push(succs[i]);
+           if(!succs[i]->get_is_terminal() && succs[i]->reused_nodes < max_lookahead / this->fs && !succs[i]->test_duplicate() ) q.push(succs[i]);
      //      else if(succs[i]->reused_nodes >= max_lookahead) std::cout <<"Obviado para busqueda\n";
          }
             
@@ -136,8 +136,9 @@ float IW::run() {
     restore_state(root);
     float rw = env->act(best_act);
     for(int i =0 ; i<ch.size(); i++) {
-        if(ch[i] != best_node) 
+        if(ch[i] != best_node){ 
             remove_tree(ch[i]);
+        }
         else {
             //std::cout <<"Si hay un nuevo buen root\n";
             update_tree(ch[i], rw);
@@ -171,9 +172,9 @@ int IW::check_and_update_novelty( Node * nod){
     restore_state(nod);
     std::vector<std::pair<int,byte_t> > fs = get_features(); 
     int nov = novelty(fs);
-    if ( nov == 1 ) {
+    /*if ( nov == 1 ) {
 	    add_to_novelty_table(fs);
-	}
+	}*/
 
     return nov;
 }
@@ -195,9 +196,10 @@ std::vector<std::pair<int,byte_t> > IW::get_features(){
 int IW::novelty(std::vector<std::pair<int, byte_t> > fs){
     int nov = 1e9;
 
-    for(int i =0 ; i< fs.size() && nov > 1;i++){
+    for(int i =0 ; i< fs.size();i++){
         if(novelty_table[fs[i].first][(int)fs[i].second] == 0){
             nov = 1;
+            novelty_table[fs[i].first][(int)fs[i].second] = 1;
         }
     }
 

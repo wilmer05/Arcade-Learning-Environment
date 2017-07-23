@@ -11,11 +11,18 @@
 #include <map>
 typedef unsigned char byte_t;
 typedef std::vector<std::vector<std::vector< std::map<int, int> > > > basic_table_t;
+
+typedef std::vector<int> vi;
+typedef std::vector<vi > vix2;
+typedef std::vector<vix2 > vix3;
+typedef std::vector<vix3 > vix4;
+
+typedef vix4 similar_patches_t;
 #define RAM_FEATURES 1
 #ifndef DEF_IW_RGB
 #define DEF_IW_RGB
-static bool novelty_table_bpros[k_different_colors][k_different_colors][k_novelty_columns * 2][k_novelty_rows * 2];
-static bool novelty_table_bprot[k_different_colors][k_different_colors][k_novelty_columns * 2][k_novelty_rows * 2];
+static float novelty_table_bpros[k_different_colors][k_different_colors][k_novelty_columns * 2][k_novelty_rows * 2];
+static float novelty_table_bprot[k_different_colors][k_different_colors][k_novelty_columns * 2][k_novelty_rows * 2];
 class IWRGB{
     public:
         /*IWRGB() { 
@@ -35,14 +42,32 @@ class IWRGB{
 
         int get_total_features() { return total_features;} 
 
+        bool neighbor_comparison() {
+            return features_type == 5 || features_type == 7;
+        }
+
+        void init_similarity_talbe(int c_number, int r_number) {
+            similarity_table = vix4(9, vix3(k_time_steps_comparison / this -> fs, vix2(c_number, vi(r_number, 0))));
+        }
+
+        bool dynamic_frame_skipping(Node *);
+
     private:
+
+        int generated;
+        int news;
+        int pruned;
+        int expanded;
+
         basic_table_t get_features();
         int novelty(Node *, basic_table_t &fs);
         void remove_tree(Node *); 
         void reset();
         //void restore_state(Node *nod);
         //bool novelty_table_basic[k_novelty_columns][k_novelty_rows][k_different_colors];
-        std::vector< std::vector<std::vector< std::vector<int> > > > novelty_table_basic;
+        std::vector< std::vector<std::vector< std::vector<float> > > > novelty_table_basic;
+
+        similar_patches_t similarity_table;
         //bool novelty_table_bpros[k_different_colors][k_different_colors][k_novelty_columns * 2][k_novelty_rows * 2];
         //bool novelty_table_bpros[1][1][1][1];
         void update_tree(Node *, float);
@@ -61,6 +86,7 @@ class IWRGB{
         int number_of_tables;
         int number_of_displacements;
         int total_features;
+        std::vector<std::pair<int,int> > pixels;
 
 
 };

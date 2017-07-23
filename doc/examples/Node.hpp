@@ -24,9 +24,12 @@ class Node{
             reward_so_far -= substract; 
             discount /= discount_reward;
         }
-         void set_rw(float rw){ 
+        void set_rw(float rw){ 
             reward_so_far = rw;
         }
+
+        Node *generate_child_with_same_action(ALEInterface *);
+
         void add_tried() {tried ++;} 
         int get_depth() { return depth; } 
 
@@ -52,6 +55,8 @@ class Node{
         ActionVect childActs;
         bool solved;
         bool in_tree;
+        bool must_be_prunned;
+
     private:
 
         Node *parent;

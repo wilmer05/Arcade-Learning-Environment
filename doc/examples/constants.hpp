@@ -24,4 +24,7 @@ const int k_relevant_color = 3;
 
 const int k_several_existent_color_percentage = 25;
 const int k_relevant_color_percentage = 50;
+
+
+const int k_time_steps_comparison = 60;
 #endif
