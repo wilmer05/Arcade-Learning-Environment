@@ -7,7 +7,6 @@
 #include<utility>
 #include "iwAlgorithm.hpp"
 #include "constants.hpp"
-#include <valgrind/callgrind.h>
 
 IW::IW(int ft, ALEInterface *ale) {
     features_type = ft;
