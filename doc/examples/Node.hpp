@@ -13,7 +13,7 @@ class Node{
 
         Node(Node* par, Action act, int d, double rew, double discs);
 
-        std::vector<Node *> get_successors(ALEInterface *env);
+        std::vector<Node *> get_successors(ALEInterface *env, bool);
 
         std::vector<Node *> get_stateless_successors(ALEInterface *env);
         ALEState get_state();
@@ -28,7 +28,7 @@ class Node{
             reward_so_far = rw;
         }
 
-        Node *generate_child_with_same_action(ALEInterface *);
+        Node *generate_child_with_same_action(ALEInterface *, bool);
 
         void add_tried() {tried ++;} 
         int get_depth() { return depth; } 
@@ -56,7 +56,7 @@ class Node{
         bool solved;
         bool in_tree;
         bool must_be_prunned;
-        std::vector<byte_t> ram;
+        std::vector<byte_t> features;
     private:
 
         Node *parent;

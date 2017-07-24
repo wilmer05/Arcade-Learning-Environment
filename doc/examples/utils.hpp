@@ -10,4 +10,7 @@ void restore_state(Node *nod, ALEInterface *env);
 
 std::vector<std::pair<int,int> > get_meaninful_pixels(ALEInterface *env);
 
+
+std::vector<byte_t> get_feat(ALEInterface *env, bool take_screen);
+
 #endif

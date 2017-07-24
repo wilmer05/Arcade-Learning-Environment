@@ -6,14 +6,14 @@
 #include"Node.hpp"
 #include "constants.hpp"
 #include<algorithm>
-Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double disc, std::vector<byte_t> the_ram) {
+Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double disc, std::vector<byte_t> feat) {
     parent = par;
     state = ale_state;
     depth = d;
     reward_so_far = rew;
     discount = disc;
     action = act;
-    this -> ram = the_ram;
+    this -> features = feat;
     childs = std::vector<Node *>();
     count_in_novelty = true;
     is_terminal = false;
@@ -51,7 +51,7 @@ Node::Node(Node* par, Action act, int d, double rew, double disc) {
     std::cout << act << std::endl;*/
 }
 
-Node * Node::generate_child_with_same_action(ALEInterface * env){
+Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_screen){
     Action a = this -> action;
     Node *nod = NULL;
 
@@ -68,12 +68,17 @@ Node * Node::generate_child_with_same_action(ALEInterface * env){
         if(env->game_over()){
             reward = -10000000;
         }
-        const ALERAM &ram = env->getRAM();
+
         std::vector<byte_t> v;
-        for(int i = 0 ; i < RAM_SIZE; i++){
-            v.push_back(ram.get(i));
+        if(!take_screen){
+            const ALERAM &ram = env->getRAM();
+            for(int i = 0 ; i < RAM_SIZE; i++){
+                v.push_back(ram.get(i));
+            }
+        } else{
+            env->getScreenGrayscale(v);    
         }
-nod = new Node(this, a, nextState, cur_d, reward_so_far + reward, cur_disc, v);
+        nod = new Node(this, a, nextState, cur_d, reward_so_far + reward, cur_disc, v);
         this -> childs.push_back(nod);
     }
     
@@ -122,7 +127,7 @@ bool Node::test_duplicate(){
   }
 
 }
-std::vector<Node *> Node::get_successors(ALEInterface *env){
+std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen){
     std::vector<Node *> succs;
 
     if(childs.size() > 0) return childs;
@@ -161,11 +166,17 @@ std::vector<Node *> Node::get_successors(ALEInterface *env){
         if(env->game_over()) reward = -10000000;
         //std::cout << env->getFrameNumber() << "\n";
         //std::cout << acts[i] <<"\n";
-        const ALERAM &ram = env->getRAM();
+
         std::vector<byte_t> v;
-       for(int i = 0 ; i < RAM_SIZE; i++){
-            v.push_back(ram.get(i));
+        if(!take_screen){
+            const ALERAM &ram = env->getRAM();
+            for(int i = 0 ; i < RAM_SIZE; i++){
+                v.push_back(ram.get(i));
+            }
+        } else{
+            env->getScreenGrayscale(v);    
         }
+
         succs.push_back(new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc, v));
     }
     random_shuffle(succs.begin(), succs.end());

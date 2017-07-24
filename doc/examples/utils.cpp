@@ -58,3 +58,19 @@ std::vector<std::pair<int,int> > get_meaninful_pixels(ALEInterface *ale){
     std::cout << meaninful_pixels.size() << " out of 33600 are going to be used \n";
     return meaninful_pixels;
 }
+
+
+std::vector<byte_t> get_feat(ALEInterface *env, bool take_screen){
+    std::vector<byte_t> v;
+    //restore_state(nod, env);
+    if(!take_screen){
+        const ALERAM &ram = env->getRAM();
+        for(int i = 0 ; i < RAM_SIZE; i++){
+            v.push_back(ram.get(i));
+        }
+    } else{
+        env->getScreenGrayscale(v);
+    }
+
+    return v;
+}

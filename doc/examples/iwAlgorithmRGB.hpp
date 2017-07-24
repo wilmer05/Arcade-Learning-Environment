@@ -59,7 +59,7 @@ class IWRGB{
         int pruned;
         int expanded;
 
-        basic_table_t get_features();
+        basic_table_t get_features(Node *);
         int novelty(Node *, basic_table_t &fs);
         void remove_tree(Node *); 
         void reset();

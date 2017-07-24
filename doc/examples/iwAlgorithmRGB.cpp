@@ -64,8 +64,9 @@ IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column
 void IWRGB::reset(){
     if(root == NULL) {
         ActionVect v  = env->getMinimalActionSet();
-        root = new Node(NULL, v[0], env->cloneState(), 1, 0, 1);
-        best_node = new Node(NULL, v[0], env->cloneState(), -5000000, -5000000, -5000000);
+        std::vector<byte_t> feat =  get_feat(env, true);
+        root = new Node(NULL, v[0], env->cloneState(), 1, 0, 1, feat);
+        best_node = new Node(NULL, v[0], env->cloneState(), -5000000, -5000000, -5000000, feat);
     }
 
     for(int d =0 ; d < number_of_tables; d++)
@@ -103,7 +104,7 @@ bool IWRGB::dynamic_frame_skipping(Node *nod){
          for(st =0 ; st < steps && st + generated < max_lookahead / this->fs; st++){
             
             //std::cout <<"Sali0\n";
-            Node *succ = curr_node->generate_child_with_same_action(env);
+            Node *succ = curr_node->generate_child_with_same_action(env, true);
             //std::cout <<"Sali0-2\n";
             if(succ == NULL) break;
             generated++ ;
@@ -162,7 +163,7 @@ float IWRGB::run() {
        bool leaf = curr_node->get_childs().size() == 0;
        std::vector<Node *> succs;
        if(curr_node->get_depth() < max_depth / this -> fs){
-            succs = curr_node->get_successors(env);
+            succs = curr_node->get_successors(env, true);
        }
        curr_node -> unset_count_in_novelty();
 
@@ -215,7 +216,7 @@ float IWRGB::run() {
     root = best_node;
     best_node = tmp_node;
     if(root == best_node){ 
-        best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), -5000000, -5000000, -5000000);
+        best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), -5000000, -5000000, -5000000, get_feat(env, true));
         std::cout <<"Best node restarted\n";
     }
     std::cout <<"Best action: " << best_act << std::endl;
@@ -237,14 +238,14 @@ void IWRGB::update_tree(Node *nod, float reward){
 }
 int IWRGB::check_and_update_novelty( Node * nod){
 
-    restore_state(nod, env);
-    basic_table_t fs = get_features(); 
+    //restore_state(nod, env);
+    basic_table_t fs = get_features(nod); 
 
     return novelty(nod, fs);
 }
-basic_table_t IWRGB::get_features(){
-    std::vector<byte_t> screen;
-    env->getScreenGrayscale(screen);
+basic_table_t IWRGB::get_features(Node * nod){
+    std::vector<byte_t> &screen = nod->features;
+    //env->getScreenGrayscale(screen);
     //std::cout << "entre get_feat\n"; 
     basic_table_t v(number_of_displacements ,std::vector< std::vector<std::map<int, int> > >(c_number + 5, std::vector<std::map<int, int > >(r_number + 5, std::map<int, int>())));
     for(int d =0 ; d < number_of_displacements; d++)
@@ -287,8 +288,8 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
            par = par -> get_parent(); 
         }
         if(par != NULL){
-            restore_state(par, env);
-            fs_parent = get_features();
+            //restore_state(par, env);
+            fs_parent = get_features(par);
         }
     }
 
@@ -381,8 +382,8 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
             par = par->get_parent();
             
             if(par == NULL) break;
-            restore_state(par, env);
-            fs_parent = get_features();
+            //restore_state(par, env);
+            fs_parent = get_features(par);
 
             for(int i = 0 ; i< sz1; i++)
                 for(int j = 0 ; j < sz2; j++) {

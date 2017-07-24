@@ -80,7 +80,7 @@ float IW::run() {
        //std::cout <<leaf<< "\n";
        std::vector<Node *> succs;
        if(curr_node -> get_depth() < max_depth / this->fs) {
-            succs = curr_node->get_successors(env);
+            succs = curr_node->get_successors(env, false);
        }
        curr_node -> unset_count_in_novelty();
 
@@ -188,7 +188,7 @@ std::vector<std::pair<int,byte_t> > IW::get_features(Node *nod){
     std::vector<std::pair<int,byte_t> > fs;
     //if (features_type == RAM_FEATURES){
 
-   std::vector<byte_t> &ram = nod->ram;;
+   std::vector<byte_t> &ram = nod->features;
    fs = std::vector<std::pair<int,byte_t> >();
    for(int i = 0 ; i < RAM_SIZE; i++){
        fs.push_back(std::make_pair (i, ram[i]));
