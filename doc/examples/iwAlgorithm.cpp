@@ -62,6 +62,7 @@ float IW::run() {
     int news = 0;
     int pruned = 0 ;
     int expanded = 0;
+    maximum_depth = 1;
     //CALLGRIND_START_INSTRUMENTATION;
     while(!q.empty()){
        curr_node = q.front();

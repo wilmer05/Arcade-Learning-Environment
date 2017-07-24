@@ -232,7 +232,7 @@ void IWRGB::remove_tree(Node * nod){
 void IWRGB::update_tree(Node *nod, float reward){
     std::vector<Node *> ch = nod->get_childs();
     for(int i =0 ; i< ch.size(); i++) 
-        if(!ch[i]->get_is_duplicate())update_tree(ch[i], reward);
+        update_tree(ch[i], reward);
     nod->set_depth(nod->get_depth() - 1);
     nod->set_reward_so_far(reward);
 }
