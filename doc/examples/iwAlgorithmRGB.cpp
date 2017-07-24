@@ -342,7 +342,7 @@ int IWRGB::novelty(Node * nod, basic_table_t &fs){
                                         int cc = i - i2 + k_novelty_columns;
                                         int rr = j - j2 + k_novelty_rows;
                                         //std::cout << k1 << " " << k2 << " " << cc << " " << rr << "\n";
-                                        if(novelty_table_bprot[k1][k2][cc][rr] == 0){
+                                        if(novelty_table_bprot[k1][k2][cc][rr] == -1000.0){
                                             //std::cout << "BPROS_NEW" << "\n";
                                             nov = 1;
                                         }
