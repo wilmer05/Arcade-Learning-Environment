@@ -194,7 +194,7 @@ float IWRGB::run() {
          }
             
     }
-    std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << best_node -> get_reward_so_far() << std::endl;
+    std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << best_node -> get_reward_so_far() /*<< " " << best_node*/<< std::endl;
     std::cout<< "Generated nodes: " << generated << std::endl;
     std::cout <<"Expanded nodes:" << expanded << "\n";
     std::cout<< "Pruned nodes: " << pruned << std::endl;
