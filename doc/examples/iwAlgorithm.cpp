@@ -62,7 +62,7 @@ float IW::run() {
     int news = 0;
     int pruned = 0 ;
     int expanded = 0;
-    CALLGRIND_START_INSTRUMENTATION;
+    //CALLGRIND_START_INSTRUMENTATION;
     while(!q.empty()){
        curr_node = q.front();
        q.pop();
@@ -124,8 +124,8 @@ float IW::run() {
          }
             
     }
-    CALLGRIND_STOP_INSTRUMENTATION;
-    CALLGRIND_DUMP_STATS;
+    //CALLGRIND_STOP_INSTRUMENTATION;
+    //CALLGRIND_DUMP_STATS;
     std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << best_node -> get_reward_so_far() << std::endl;
     std::cout<< "Generated nodes: " << generated << std::endl;
     std::cout <<"Expanded nodes:" << expanded << "\n";
