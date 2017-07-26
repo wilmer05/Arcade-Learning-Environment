@@ -9,8 +9,18 @@
 #include"constants.hpp"
 #include"utils.hpp"
 #include <map>
+#include <bitset>
+
+
+#define RAM_FEATURES 1
+#ifndef DEF_IW_RGB
+#define DEF_IW_RGB
+
+#define select_features(nod) (nod->get_depth() == 2 ? nod->processed_screen : nod->differential_screen)
+#define select_patches(nod) (nod ->get_depth() == 2 ? nod->patch_index : nod->differential_patch_index)
+
 typedef unsigned char byte_t;
-typedef std::vector<std::vector<std::vector< std::map<int, int> > > > basic_table_t;
+//typedef std::vector<std::vector<std::vector< std::map<int, int> > > > basic_table_t;
 
 typedef std::vector<int> vi;
 typedef std::vector<vi > vix2;
@@ -18,11 +28,10 @@ typedef std::vector<vix2 > vix3;
 typedef std::vector<vix3 > vix4;
 
 typedef vix4 similar_patches_t;
-#define RAM_FEATURES 1
-#ifndef DEF_IW_RGB
-#define DEF_IW_RGB
-static float novelty_table_bpros[k_different_colors][k_different_colors][k_novelty_columns * 2][k_novelty_rows * 2];
-static float novelty_table_bprot[k_different_colors][k_different_colors][k_novelty_columns * 2][k_novelty_rows * 2];
+typedef std::vector<std::pair<int,int> > vp;
+
+//std::vector<int> table_basic;
+//std::vector<int> novelty_table_basic;
 class IWRGB{
     public:
         /*IWRGB() { 
@@ -54,19 +63,29 @@ class IWRGB{
 
     private:
 
+        //void reset_table(std::vector<int> &);
+        void reset_table(std::vector<bool> &);
+        void reset_tables();
         int generated;
         int news;
         int pruned;
         int expanded;
 
-        basic_table_t get_features(Node *);
-        int novelty(Node *, basic_table_t &fs);
+        void compute_features(Node *);
+        int novelty(Node *);
         void remove_tree(Node *); 
         void reset();
         //void restore_state(Node *nod);
         //bool novelty_table_basic[k_novelty_columns][k_novelty_rows][k_different_colors];
-        std::vector< std::vector<std::vector< std::vector<float> > > > novelty_table_basic;
+        //std::vector< std::vector<std::vector< std::vector<float> > > > novelty_table_basic;
+        std::vector<bool> novelty_table;
+        void compute_cross_features(std::vector<int> &screen_state_atoms);
+        //std::vector<bool> novelty_table_bpros;
+        //std::vector<bool> novelty_table_bprot;
 
+        std::vector<bool> table;
+        //std::vector<bool> table_bpros;
+        //std::vector<bool> table_bprot;
         similar_patches_t similarity_table;
         //bool novelty_table_bpros[k_different_colors][k_different_colors][k_novelty_columns * 2][k_novelty_rows * 2];
         //bool novelty_table_bpros[1][1][1][1];
@@ -87,7 +106,6 @@ class IWRGB{
         int number_of_displacements;
         int total_features;
         std::vector<std::pair<int,int> > pixels;
-
 
 };
 #endif

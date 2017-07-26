@@ -3,9 +3,13 @@
 #ifdef __USE_SDL
     #include <SDL.h>
 #endif
+#include <bitset>
 #include"constants.hpp"
 #ifndef DEF_NODE
 #define DEF_NODE
+
+typedef std::vector<std::vector<std::vector< std::map<int, int> > > > basic_table_t;
+
 class Node{
     public:
 
@@ -57,6 +61,13 @@ class Node{
         bool in_tree;
         bool must_be_prunned;
         std::vector<byte_t> features;
+        basic_table_t processed_screen;
+        basic_table_t differential_screen;
+        bool features_computed;
+        std::vector<std::pair<int, int> > patch_index, differential_patch_index;
+        bool generated_by_df;
+        std::vector<int> basic_f;
+        //std::bitset<k_novelty_columns * k_novelty_rows * k_different_c    olors> patch_f;
     private:
 
         Node *parent;

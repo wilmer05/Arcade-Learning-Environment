@@ -6,8 +6,11 @@
 #include"Node.hpp"
 #include "constants.hpp"
 #include<algorithm>
+#include<cstdlib>
+#include<time.h>
 Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double disc, std::vector<byte_t> feat) {
     parent = par;
+    features_computed = false;
     state = ale_state;
     depth = d;
     reward_so_far = rew;
@@ -22,6 +25,11 @@ Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double 
     tried = 0;
     in_tree = false;
     must_be_prunned = false;
+    processed_screen.clear();
+    differential_screen.clear();
+    differential_patch_index.clear();
+    patch_index.clear();
+    generated_by_df = false; 
     /*std::cout << parent << std::endl;
     std::cout << depth << std::endl;
     std::cout << rew << std::endl;
@@ -44,11 +52,6 @@ Node::Node(Node* par, Action act, int d, double rew, double disc) {
     tried = 0;
     solved = false;
     in_tree = false;
-    /*std::cout << parent << std::endl;
-    std::cout << depth << std::endl;
-    std::cout << rew << std::endl;
-    std::cout << disc << std::endl;
-    std::cout << act << std::endl;*/
 }
 
 Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_screen){
@@ -79,6 +82,7 @@ Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_scree
             env->getScreenGrayscale(v);    
         }
         nod = new Node(this, a, nextState, cur_d, reward_so_far + reward, cur_disc, v);
+        nod->generated_by_df = true;
         this -> childs.push_back(nod);
     }
     
@@ -108,15 +112,12 @@ bool Node::test_duplicate(){
     else {
         Node *parent = node->get_parent();
 
-        // Compare each valid sibling with this one
         for (int c = 0; c < parent->childs.size(); c++) {
             Node * sibling = parent->childs[c];
-            // Ignore duplicates, this node and uninitialized nodes
             if (sibling->get_is_duplicate() || sibling == node || sibling->childs.size() == 0) continue;
 
         if (sibling->state.equals(node->state)) {
             node->set_is_duplicate(true);
-            //std::cout << "Hay un duplicado \n ";
             return true;
         }
     }
@@ -127,16 +128,13 @@ bool Node::test_duplicate(){
   }
 
 }
+
+int my_random(int i) { return std::rand() % i ;}
+
 std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen){
     std::vector<Node *> succs;
-
+    std::srand(unsigned (std::time(0)));
     if(childs.size() > 0) return childs;
-
-    /*if(depth >= max_depth) {
-        return succs;
-    }*/
-
-    //restore_state(this, env);
 
     env->restoreState(this->get_state());
     ActionVect acts = env->getMinimalActionSet();
@@ -150,22 +148,12 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen){
     }
     ALEState node_state = this->get_state();
     for(int i = 0; i < acts.size(); i++) {
-        //restore_state(this, env);
         if(i)
             env->restoreState(node_state);
-        //std::cout << acts[i] << " -> \n";
-        
-        //std::cout << env->getFrameNumber() << " -.- \n";
         
         float reward = env->act(acts[i]) * cur_disc;
         ALEState nextState = env->cloneState();
-        //if(nextState == env->cloneState) std::cout <<"WHAT" << "\n";
-        //if(reward != 0.0) std::cout << "algo hay" << "\n";
-        //if(nextState.equals(node_state))
-        //    continue;
         if(env->game_over()) reward = -10000000;
-        //std::cout << env->getFrameNumber() << "\n";
-        //std::cout << acts[i] <<"\n";
 
         std::vector<byte_t> v;
         if(!take_screen){
@@ -179,7 +167,7 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen){
 
         succs.push_back(new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc, v));
     }
-    random_shuffle(succs.begin(), succs.end());
+    random_shuffle(succs.begin(), succs.end(), my_random);
     childs = succs;
     return childs;
 }

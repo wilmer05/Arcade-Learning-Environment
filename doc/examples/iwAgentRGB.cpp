@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     }
 
     ALEInterface ale;
-
+    std::srand(unsigned(std::time(0)));
     // Get & Set the desired settings
     std::cout << "FrameSkip set to: " << argv[3] << "\n";
     ale.setInt("frame_skip", atoi(argv[3]));
