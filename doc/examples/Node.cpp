@@ -7,7 +7,7 @@
 #include "constants.hpp"
 #include<algorithm>
 #include<cstdlib>
-#include<time.h>
+#include<ctime>
 Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double disc, std::vector<byte_t> feat) {
     parent = par;
     features_computed = false;
