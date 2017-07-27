@@ -56,14 +56,17 @@ void IWRGB::reset(){
 }
 
 bool IWRGB::dynamic_frame_skipping(Node *nod){
+    if(nod->generated_by_df && nod->childs.size() == 1) return false;
     Action a = nod -> get_action();
-    int steps = 60 / this->fs - 1;
+    int steps = 30 / this->fs - 1;
+    
 
     nod->must_be_prunned = true;
     //std::cout << "Entre\n";
     if(nod->childs.size() <= 1){
          Node *curr_node = nod; 
          int st = 0;
+         env->restoreState(nod->get_state());
          for(st =0 ; st < steps && st + generated < max_lookahead / this->fs; st++){
             
             //std::cout <<"Sali0\n";
@@ -71,7 +74,9 @@ bool IWRGB::dynamic_frame_skipping(Node *nod){
             //std::cout <<"Sali0-2\n";
             if(succ == NULL) break;
             generated++ ;
+            //compute_features(succ);
             if(check_and_update_novelty(succ) == 1){
+            //if(nod->basic_f != succ->basic_f){
                 curr_node = succ;
                 //std::cout <<"Sali1\n";
                 //curr_node -> set_is_terminal(true);
@@ -263,10 +268,12 @@ void IWRGB::compute_features(Node * nod){
     reset_tables();
     std::vector<byte_t> &screen = nod->features;
     //std::cout <<"VA\n"; 
+   int pixel_c = 0;
+   int pixel_r = 0;
+
     for(int i=0; i<screen.size() && i < 33600; i++){
-        int pixel_c = i % 160;
-        int pixel_r = i / 160;
-        
+        //int pixel_c = i % 160;
+        //int pixel_r = i / 160;
         int c = pixel_c / tile_column_size;
         int r = pixel_r / tile_row_size;
      //   std:: cout << tile_row_size << " " << tile_column_size << "\n";
@@ -281,6 +288,11 @@ void IWRGB::compute_features(Node * nod){
         if(!is_background(pixel_c, pixel_r, pixel_val) && !table[feature_idx]){
             nod->basic_f.push_back(feature_idx);
             table[feature_idx] = true;
+        }
+        pixel_c ++;
+        if(pixel_c >= 160 ){
+            pixel_c = 0;
+            pixel_r++;
         }
     }
 

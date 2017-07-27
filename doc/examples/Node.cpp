@@ -61,7 +61,7 @@ Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_scree
     if(this->childs.size()==1) return this->childs[0];
     if(this->childs.size() > 0) return nod;
 
-    env->restoreState(this->state);
+    //env->restoreState(this->state);
     
     int cur_d = depth + 1;
     double cur_disc = discount * discount_reward;
@@ -167,7 +167,8 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen){
 
         succs.push_back(new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc, v));
     }
-    random_shuffle(succs.begin(), succs.end(), my_random);
+    //random_shuffle(succs.begin(), succs.end(), my_random);
+    random_shuffle(succs.begin(), succs.end());
     childs = succs;
     return childs;
 }
