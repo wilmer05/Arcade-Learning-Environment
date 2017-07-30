@@ -56,6 +56,7 @@ void IWRGB::reset(){
 }
 
 bool IWRGB::dynamic_frame_skipping(Node *nod){
+    //std::cout << "DS CALLED\n" << "\n";
     if(nod->generated_by_df && nod->childs.size() == 1) return false;
     Action a = nod -> get_action();
     int steps = 30 / this->fs - 1;
@@ -66,20 +67,17 @@ bool IWRGB::dynamic_frame_skipping(Node *nod){
     if(nod->childs.size() <= 1){
          Node *curr_node = nod; 
          int st = 0;
-         env->restoreState(nod->get_state());
+         //env->restoreState(nod->get_state());
          for(st =0 ; st < steps && st + generated < max_lookahead / this->fs; st++){
             
-            //std::cout <<"Sali0\n";
             Node *succ = curr_node->generate_child_with_same_action(env, true);
-            //std::cout <<"Sali0-2\n";
             if(succ == NULL) break;
             generated++ ;
+            new_nodes++;
             //compute_features(succ);
             if(check_and_update_novelty(succ) == 1){
             //if(nod->basic_f != succ->basic_f){
                 curr_node = succ;
-                //std::cout <<"Sali1\n";
-                //curr_node -> set_is_terminal(true);
                 while(curr_node != nod){
                     if (maximum_depth < curr_node->get_depth()) maximum_depth = curr_node->get_depth();
                     if(best_node->get_reward_so_far() < curr_node->get_reward_so_far() && curr_node != root)
@@ -89,11 +87,8 @@ bool IWRGB::dynamic_frame_skipping(Node *nod){
                    curr_node -> must_be_prunned = false;
                    curr_node = curr_node -> get_parent(); 
 
-                  //  std::cout <<"Sali3\n";
                 }
-                //std::cout <<"Sali2\n";
                 curr_node -> must_be_prunned = false;
-                //std::cout <<"Found some novelty\n" ;
                 break;   
             }
             curr_node = succ;
@@ -120,6 +115,7 @@ float IWRGB::run() {
     news = 0;
     pruned = 0 ;
     expanded = 0;
+    new_nodes = 0;
     //std::cout <<"Vax2\n";
     while(!q.empty()){
        curr_node = q.front();
@@ -131,15 +127,25 @@ float IWRGB::run() {
             best_node = curr_node;
        
        bool leaf = curr_node->get_childs().size() == 0;
+       if(leaf && generated >= max_lookahead / this->fs) continue;
        std::vector<Node *> succs;
        if(curr_node->get_depth() < max_depth / this -> fs){
             succs = curr_node->get_successors(env, true);
        }
+
+       if(leaf) new_nodes += succs.size();
        curr_node -> unset_count_in_novelty();
 
-       for(int i =0 ; i < succs.size() && generated < max_lookahead / this->fs; i++){
+       for(int i =0 ; i < succs.size() && generated + succs.size() < max_lookahead / this->fs; i++){
            if(leaf) {
                 generated ++;
+                if(succs[i] -> test_duplicate()){
+                    pruned++;
+
+                    succs[i] -> set_is_terminal(true);
+                    continue;
+                }
+
 			    if(!succs[i] -> generated_by_df && check_and_update_novelty(succs[i]) != 1 && dynamic_frame_skipping(succs[i])){
 				    succs[i]->set_is_terminal(true);
                     succs[i]->tried++;
@@ -149,7 +155,17 @@ float IWRGB::run() {
                     succs[i]->set_is_terminal(false);
                 }
            } else{
+                
                 if(succs[i] -> get_is_terminal()){
+            
+                        if(succs[i] -> test_duplicate()){
+                            pruned++;
+                            succs[i] -> set_is_terminal(true);
+                            continue;
+                        }
+
+
+
                       if(succs[i] -> generated_by_df || check_and_update_novelty(succs[i]) == 1 || !dynamic_frame_skipping(succs[i])){
                         //add_to_novelty_table(fs);
                         succs[i]->set_is_terminal(false);
@@ -169,6 +185,7 @@ float IWRGB::run() {
     std::cout <<"Expanded nodes:" << expanded << "\n";
     std::cout<< "Pruned nodes: " << pruned << std::endl;
     std::cout<< "Maximum depth: " << maximum_depth << std::endl;
+    std::cout << "New generated nodes: " << new_nodes << std::endl;
     Node *tmp_node = best_node;
     while(best_node->get_depth() > 2) best_node = best_node->get_parent();
     Action best_act = best_node -> get_action();
@@ -215,7 +232,7 @@ void IWRGB::reset_table(std::vector<bool> &table){
         for(int i =0 ; i < table.size(); i++) table[i] = false;
 }
 
-void IWRGB::reset_tables(){
+inline void IWRGB::reset_tables(){
     //if(table.size()) 
     //    reset_table(table); 
     /*else*/ if(this->features_type == 1)
@@ -226,35 +243,40 @@ void IWRGB::reset_tables(){
         table = std::vector<bool> (k_total_basic_features + num_cross_features_ + num_temporal_features_, false);
 }
 
-void IWRGB::compute_cross_features(std::vector<int> &screen_state_atoms) {
+void IWRGB::compute_cross_features(std::vector<int> &screen_state_atoms, Node *nod) {
+    Node *par = NULL;
+    if(this -> features_type == 3){
+        int cnt = 3;
+        par = nod;
+        while(par != NULL && cnt >0){
+            par = par->get_parent();
+            cnt--;
+        }
+    }
+
     std::vector<int> basic_features(screen_state_atoms);
     std::pair<std::pair<int, int>, int> f1, f2;
     for( size_t j = 0; j < basic_features.size(); ++j ) {
         //unpack_basic_feature(basic_features[j], f1);
-        int start = j + 1;
-        if(this -> features_type == 3) 
-            start = 0;
-
-        for( size_t k = start; k < basic_features.size(); ++k ) {
+        for( size_t k = j + 1; k < basic_features.size(); ++k ) {
             //unpack_basic_feature(basic_features[k], f2);
 
-            if(k > j){
-                int pack = pack_cross_feature(basic_features[j], basic_features[k]);
+            int pack = pack_cross_feature(basic_features[j], basic_features[k]);
+            if( !table[pack] ) {
+                table[pack] = true;
+                screen_state_atoms.push_back(pack);
+            }
+        } 
+
+        if(par != NULL)
+            for(int k = 0; k < par->basic_f.size() && is_basic_feature(par->basic_f[k]); k++){
+                int pack = pack_temporal_feature(basic_features[j], par->basic_f[k]);
                 if( !table[pack] ) {
                     table[pack] = true;
                     screen_state_atoms.push_back(pack);
-                }
+                } else break;
             }
-            
-            if(this -> features_type == 3){
-                int pack = pack_temporal_feature(basic_features[j], basic_features[k]);
-                if( !table[pack] ) {
-                    table[pack] = true;
-                    screen_state_atoms.push_back(pack);
-                }
-            
-            }
-        }
+        
     }
 }
 
@@ -265,6 +287,7 @@ void IWRGB::compute_features(Node * nod){
     
     nod -> features_computed = true;
     nod -> basic_f.clear();
+    //if(nod == root)
     reset_tables();
     std::vector<byte_t> &screen = nod->features;
     //std::cout <<"VA\n"; 
@@ -297,7 +320,7 @@ void IWRGB::compute_features(Node * nod){
     }
 
     if(this -> features_type >= 2){
-        compute_cross_features(nod->basic_f);
+        compute_cross_features(nod->basic_f, nod);
     }
     //std::cout << nod->basic_f.size() << "\n";
 }

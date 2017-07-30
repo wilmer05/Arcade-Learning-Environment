@@ -79,7 +79,7 @@ class IWRGB{
         //bool novelty_table_basic[k_novelty_columns][k_novelty_rows][k_different_colors];
         //std::vector< std::vector<std::vector< std::vector<float> > > > novelty_table_basic;
         std::vector<bool> novelty_table;
-        void compute_cross_features(std::vector<int> &screen_state_atoms);
+        void compute_cross_features(std::vector<int> &screen_state_atoms, Node *);
         //std::vector<bool> novelty_table_bpros;
         //std::vector<bool> novelty_table_bprot;
 
@@ -104,6 +104,7 @@ class IWRGB{
         int displacement;
         int number_of_tables;
         int number_of_displacements;
+        int new_nodes;
         int total_features;
         std::vector<std::pair<int,int> > pixels;
 

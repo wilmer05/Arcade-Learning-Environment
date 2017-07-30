@@ -10,6 +10,7 @@
 #include<ctime>
 Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double disc, std::vector<byte_t> feat) {
     parent = par;
+    tested_duplicate = false;
     features_computed = false;
     state = ale_state;
     depth = d;
@@ -61,7 +62,7 @@ Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_scree
     if(this->childs.size()==1) return this->childs[0];
     if(this->childs.size() > 0) return nod;
 
-    //env->restoreState(this->state);
+    env->restoreState(this->state);
     
     int cur_d = depth + 1;
     double cur_disc = discount * discount_reward;
@@ -108,25 +109,24 @@ void Node::restore_state(Node *nod, ALEInterface *env){
 bool Node::test_duplicate(){
     Node *node = this;
     if (node->get_parent() == NULL) return false;
-    else if(is_duplicate) {return true;}
-    else {
-        Node *parent = node->get_parent();
+    else if(tested_duplicate) {return is_duplicate;}
 
-        for (int c = 0; c < parent->childs.size(); c++) {
-            Node * sibling = parent->childs[c];
-            if (sibling->get_is_duplicate() || sibling == node || sibling->childs.size() == 0) continue;
+    tested_duplicate = true;
+    Node *parent = node->get_parent();
 
-        if (sibling->state.equals(node->state)) {
-            node->set_is_duplicate(true);
-            return true;
-        }
+    for (int c = 0; c < parent->childs.size(); c++) {
+        Node * sibling = parent->childs[c];
+        if (sibling->get_is_duplicate() || sibling == node || sibling->childs.size() == 0) continue;
+
+         if (sibling->state.equals(node->state)) {
+             node->set_is_duplicate(true);
+             return true;
+         }
     }
-
     // None of the siblings match, unique node
     node->set_is_duplicate(false);
     return false;
-  }
-
+    
 }
 
 int my_random(int i) { return std::rand() % i ;}

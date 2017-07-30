@@ -60,6 +60,7 @@ class Node{
         bool solved;
         bool in_tree;
         bool must_be_prunned;
+        bool tested_duplicate;
         std::vector<byte_t> features;
         basic_table_t processed_screen;
         basic_table_t differential_screen;
