@@ -60,7 +60,7 @@ class IWRGB{
         }
 
         bool dynamic_frame_skipping(Node *);
-
+        void update_av_depth(Node *);
     private:
 
         //void reset_table(std::vector<int> &);
@@ -68,6 +68,8 @@ class IWRGB{
         void reset_tables();
         int generated;
         int news;
+        double depth_sum;
+        double depth_percentage;
         int pruned;
         int expanded;
 

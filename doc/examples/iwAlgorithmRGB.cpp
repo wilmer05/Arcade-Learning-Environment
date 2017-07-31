@@ -53,6 +53,14 @@ void IWRGB::reset(){
 
     total_features = 0;
     maximum_depth = 0;
+    depth_sum = 0;
+    depth_percentage = 0;
+}
+
+void IWRGB::update_av_depth(Node *nod){
+    
+    depth_sum += nod->get_depth();
+
 }
 
 bool IWRGB::dynamic_frame_skipping(Node *nod){
@@ -72,10 +80,12 @@ bool IWRGB::dynamic_frame_skipping(Node *nod){
             
             Node *succ = curr_node->generate_child_with_same_action(env, true);
             if(succ == NULL) break;
+            update_av_depth(succ);
             generated++ ;
             new_nodes++;
             //compute_features(succ);
             if(check_and_update_novelty(succ) == 1){
+
             //if(nod->basic_f != succ->basic_f){
                 curr_node = succ;
                 while(curr_node != nod){
@@ -105,9 +115,13 @@ float IWRGB::run() {
     Node *curr_node  = root;
 
     std::vector<Node *> chs = curr_node->get_childs();
+    int total_reused = 0;
     for(int i= 0 ; i< chs.size(); i++) {
         //std::cout <<"Entre " << chs.size() << " " << chs[i]->tried << "\n";
         chs[i]->count_nodes();
+        //std::cout << "#########" ;
+        //std::cout << chs[i] -> reused_nodes << "\n";
+        total_reused += chs[i] -> reused_nodes;
     }
     q.push(curr_node);
     ActionVect v  = env->getMinimalActionSet();
@@ -117,6 +131,7 @@ float IWRGB::run() {
     expanded = 0;
     new_nodes = 0;
     //std::cout <<"Vax2\n";
+    //std::cout << max_lookahead / this->fs;
     while(!q.empty()){
        curr_node = q.front();
        //std::cout << curr_node->get_reward_so_far() << "\n";
@@ -125,6 +140,7 @@ float IWRGB::run() {
        if (maximum_depth < curr_node->get_depth()) maximum_depth = curr_node->get_depth();
        if(best_node->get_reward_so_far() < curr_node->get_reward_so_far() && curr_node != root)
             best_node = curr_node;
+       
        
        bool leaf = curr_node->get_childs().size() == 0;
        if(leaf && generated >= max_lookahead / this->fs) continue;
@@ -138,7 +154,8 @@ float IWRGB::run() {
 
        for(int i =0 ; i < succs.size() && generated + succs.size() < max_lookahead / this->fs; i++){
            if(leaf) {
-                generated ++;
+                generated++;
+                update_av_depth(succs[i]);
                 if(succs[i] -> test_duplicate()){
                     pruned++;
 
@@ -156,7 +173,7 @@ float IWRGB::run() {
                 }
            } else{
                 
-                if(succs[i] -> get_is_terminal()){
+                if(succs[i] -> get_is_terminal()) {
             
                         if(succs[i] -> test_duplicate()){
                             pruned++;
@@ -175,7 +192,7 @@ float IWRGB::run() {
                       }
                 }
             }
-           if((!succs[i]->get_is_terminal() /*|| (leaf && succs[i]->tried * this->fs < 30)*/) && !succs[i]->test_duplicate() && succs[i]->reused_nodes < max_lookahead  / this->fs) q.push(succs[i]);
+           if((!succs[i]->get_is_terminal() /*|| (leaf && succs[i]->tried * this->fs < 30)*/) && !succs[i]->test_duplicate() && succs[i]->reused_nodes < max_lookahead  / this->fs)  q.push(succs[i]);
            else pruned++;
          }
             
@@ -186,6 +203,9 @@ float IWRGB::run() {
     std::cout<< "Pruned nodes: " << pruned << std::endl;
     std::cout<< "Maximum depth: " << maximum_depth << std::endl;
     std::cout << "New generated nodes: " << new_nodes << std::endl;
+    if(generated == 0) generated = 1;
+    std::cout << "Average depth: " << depth_sum / generated << "\n";
+    std::cout << "Reused nodes: " << total_reused << "\n";
     Node *tmp_node = best_node;
     while(best_node->get_depth() > 2) best_node = best_node->get_parent();
     Action best_act = best_node -> get_action();
