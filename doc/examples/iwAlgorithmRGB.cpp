@@ -46,7 +46,8 @@ void IWRGB::reset(){
         ActionVect v  = env->getMinimalActionSet();
         std::vector<byte_t> feat =  get_feat(env, true);
         root = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, feat);
-        best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, feat);
+        best_node = root;
+        //best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, feat);
     }
 
     //if(neighbor_comparison()) init_similarity_talbe(c_number + 5, r_number + 5);
@@ -72,7 +73,7 @@ bool IWRGB::dynamic_frame_skipping(Node *nod){
 
     nod->must_be_prunned = true;
     //std::cout << "Entre\n";
-    if(nod->childs.size() <= 1){
+    if(!nod->childs.size()){
          Node *curr_node = nod; 
          int st = 0;
          //env->restoreState(nod->get_state());
@@ -112,7 +113,7 @@ bool IWRGB::dynamic_frame_skipping(Node *nod){
 float IWRGB::run() {
     //std::cout <<"Va\n";
     reset();
-    Node *curr_node  = root;
+    Node *curr_node = root;
 
     std::vector<Node *> chs = curr_node->get_childs();
     int total_reused = 0;
@@ -223,7 +224,9 @@ float IWRGB::run() {
     root = best_node;
     best_node = tmp_node;
     if(root == best_node){ 
+        delete root;
         best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, get_feat(env, true));
+        best_node = root;
         std::cout <<"Best node restarted\n";
     }
     std::cout <<"Best action: " << best_act << std::endl;

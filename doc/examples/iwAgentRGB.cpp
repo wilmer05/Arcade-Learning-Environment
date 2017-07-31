@@ -24,6 +24,7 @@
 #include "iwAlgorithmRGB.hpp"
 #include <ctime>
 #include <cstdlib>
+#include "butils.h"
 using namespace std;
 
 int main(int argc, char** argv) {
@@ -59,15 +60,16 @@ int main(int argc, char** argv) {
     cout << "Starting Episode\n";
     for (episode=0; !ale.game_over() && episode<max_steps / fs; episode++) {
 
-        time_t start,end;
-        time (&start);
+        float start,end;
+        //time (&start);
+        start = Utils::read_time_in_seconds();
         
         totalReward += iw.run();
         
-        time(&end);
+        end = Utils::read_time_in_seconds();
 
         cout << "Step number " << episode  + 1<< " ended with score: " << totalReward << endl;
-        cout <<"Elapsed time: " << difftime(end,start) << endl;
+        cout <<"Elapsed time: " << end-start << endl;
         cout << "Total features in lookahead = " << iw.get_total_features() << "\n";
     }
     if(episode == max_steps) cout << "Ended by number of steps\n";
