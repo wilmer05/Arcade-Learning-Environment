@@ -33,7 +33,9 @@ IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column
 
 void IWRGB::reset(){
 
-    if(this->features_type == 1)
+    if(novelty_table.size() > 0 )
+        reset_table(novelty_table);
+    else if(this->features_type == 1)
         novelty_table = std::vector<bool>(k_total_basic_features, false);
     else if(this -> features_type == 2){
         novelty_table = std::vector<bool>(k_total_basic_features + num_cross_features_, false);
@@ -252,13 +254,14 @@ int IWRGB::check_and_update_novelty( Node * nod){
 }
 
 void IWRGB::reset_table(std::vector<bool> &table){
-        for(int i =0 ; i < table.size(); i++) table[i] = false;
+        std::fill(table.begin(), table.end(), false);
+        //for(int i =0 ; i < table.size(); i++) table[i] = false;
 }
 
 inline void IWRGB::reset_tables(){
-    //if(table.size()) 
-    //    reset_table(table); 
-    /*else*/ if(this->features_type == 1)
+    if(table.size()) 
+        reset_table(table); 
+    else if(this->features_type == 1)
         table = std::vector<bool> (k_total_basic_features, false);
     else if(this->features_type == 2)
         table = std::vector<bool> (k_total_basic_features + num_cross_features_, false);
@@ -355,6 +358,7 @@ int IWRGB::novelty(Node * nod/*, vp &patches*/){
     Node *par;
     std::vector<int> &fs = nod -> basic_f;
 
+    //std::cout << novelty_table.size() << "\n";
     for(int i=0 ;i < fs.size();i++){
         assert(fs[i] < novelty_table.size());
         if(!novelty_table[fs[i]]){
