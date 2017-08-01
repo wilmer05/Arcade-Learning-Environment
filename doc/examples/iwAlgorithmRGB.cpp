@@ -132,7 +132,7 @@ float IWRGB::execute_action(Action best_act){
     if(rw != 0.0)
         while(!my_stack.empty()) my_stack.pop();
     delete root;
-    std::cout << best_node -> get_reward_so_far() << "=reward of best_node\n";
+   // std::cout << best_node -> get_reward_so_far() << "=reward of best_node\n";
     root = new_root;
     return rw;
 }
