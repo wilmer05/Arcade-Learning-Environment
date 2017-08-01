@@ -23,6 +23,7 @@ Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double 
     is_terminal = false;
     is_duplicate = false;
     reused_nodes = 0;
+    freed = false;
     tried = 0;
     in_tree = false;
     must_be_prunned = false;
@@ -46,6 +47,7 @@ Node::Node(Node* par, Action act, int d, double rew, double disc) {
     discount = disc;
     action = act;
     childs = std::vector<Node *>();
+    freed = false;
     count_in_novelty = true;
     is_terminal = false;
     is_duplicate = false;

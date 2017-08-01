@@ -17,6 +17,7 @@ IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column
     q = std::queue<Node *>();
     env = ale;
     root = NULL;
+    step_number = 0;
     this -> fs = fs;
     tile_row_size = tile_row_sz;
     tile_column_size = tile_column_sz;
@@ -113,8 +114,37 @@ bool IWRGB::dynamic_frame_skipping(Node *nod){
     return nod->must_be_prunned;
 }
 
+float IWRGB::execute_action(Action best_act){
+    std::vector<Node *> ch = root->get_childs();
+    //restore_state(root, env);
+    float rw = env->act(best_act);
+    Node *new_root;
+    for(int i =0 ; i<ch.size(); i++) {
+        if(ch[i] -> get_action() != best_act) 
+            remove_tree(ch[i]);
+        else {
+            update_tree(ch[i], rw);
+            ch[i] -> parent = NULL;
+            new_root = ch[i];
+        }
+    }
+
+    if(rw != 0.0)
+        while(!my_stack.empty()) my_stack.pop();
+    delete root;
+    std::cout << best_node -> get_reward_so_far() << "=reward of best_node\n";
+    root = new_root;
+    return rw;
+}
+
 float IWRGB::run() {
     //std::cout <<"Va\n";
+    if(my_stack.size()){
+        Action b_act = my_stack.top();
+        my_stack.pop();
+        std::cout << "Using action from stack: " << b_act <<"\n"; 
+        return execute_action(b_act);
+    }
     reset();
     Node *curr_node = root;
 
@@ -194,6 +224,8 @@ float IWRGB::run() {
                         //pruned++;
                         succs[i]->set_is_terminal(true);
                       }
+                } else if(!succs[i]->freed){
+                    free_the_memory(succs[i]);
                 }
             }
            if((!succs[i]->get_is_terminal() /*|| (leaf && succs[i]->tried * this->fs < 30)*/) && !succs[i]->test_duplicate() && succs[i]->reused_nodes < max_lookahead  / this->fs)  q.push(succs[i]);
@@ -211,7 +243,11 @@ float IWRGB::run() {
     std::cout << "Average depth: " << depth_sum / generated << "\n";
     std::cout << "Reused nodes: " << total_reused << "\n";
     Node *tmp_node = best_node;
-    while(best_node->get_depth() > 2) best_node = best_node->get_parent();
+    bool push_in_stack = best_node->get_reward_so_far() != 0.0;
+    while(best_node->get_depth() > 2) {
+        if(push_in_stack) my_stack.push(best_node->get_action());
+        best_node = best_node->get_parent();
+    }
     Action best_act = best_node -> get_action();
 
     std::vector<Node *> ch = root->get_childs();
@@ -238,6 +274,21 @@ float IWRGB::run() {
 
     std::cout <<"Best action: " << best_act << std::endl;
     return rw;
+}
+
+void IWRGB::free_the_memory(Node *nod){
+    int sz = nod->basic_f.size();
+    if(!sz) return;
+    int idx=0;
+
+    //std::cout << "freeing " << nod->basic_f.size() <<"\n";
+    //std::cout << nod->basic_f[sz];
+    while(idx < sz && is_basic_feature(nod->basic_f[idx])){
+        idx++; 
+    }
+    nod->basic_f.resize(idx);
+    //std::cout << nod->basic_f.size() << "\n";
+    nod ->freed = true;
 }
 
 void IWRGB::remove_tree(Node * nod){

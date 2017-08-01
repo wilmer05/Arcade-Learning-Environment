@@ -61,6 +61,7 @@ class IWRGB{
 
         bool dynamic_frame_skipping(Node *);
         void update_av_depth(Node *);
+        float execute_action(Action);
     private:
 
         //void reset_table(std::vector<int> &);
@@ -77,6 +78,7 @@ class IWRGB{
         int novelty(Node *);
         void remove_tree(Node *); 
         void reset();
+        void free_the_memory(Node*);
         //void restore_state(Node *nod);
         //bool novelty_table_basic[k_novelty_columns][k_novelty_rows][k_different_colors];
         //std::vector< std::vector<std::vector< std::vector<float> > > > novelty_table_basic;
@@ -93,6 +95,7 @@ class IWRGB{
         //bool novelty_table_bpros[1][1][1][1];
         void update_tree(Node *, float);
         std::queue<Node *> q;
+        std::stack<Action> my_stack;
         int features_type;
         int maximum_depth;
         int fs;
@@ -100,6 +103,7 @@ class IWRGB{
         Node * root;
         Node *best_node;
         int tile_row_size;
+        int step_number;
         int tile_column_size;
         int c_number;
         int r_number;
