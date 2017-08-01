@@ -224,14 +224,15 @@ std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << b
             update_tree(ch[i], rw);
         }
     }
+    Node *tmp2 = root;
     root = best_node;
     best_node = tmp_node;
     if(root == best_node){ 
-        delete root;
         best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, get_feat(env, true));
         root = best_node;
         std::cout <<"Best node restarted\n";
     }
+    delete tmp2;
     std::cout <<"Best action: " << best_act << std::endl;
     return rw;
 }
