@@ -6,7 +6,7 @@
 int value[210][160]; 
 bool background[210][160];
 
-int pack_basic_feature(int c, int r, int color){
+ int pack_basic_feature(int c, int r, int color){
     //std::cout << color << "\n";
     //assert(!(color & 1));
     //assert(color < 128);
@@ -16,7 +16,7 @@ int pack_basic_feature(int c, int r, int color){
     return color + (( 14 * c + r ) << 7);
 }
 
- void unpack_basic_feature(int pack, basic_t &ret){
+  void unpack_basic_feature(int pack, basic_t &ret){
     assert(pack < k_total_basic_features);
 
     int color = 127 & pack;
@@ -90,7 +90,7 @@ int pack_basic_feature(int c, int r, int color){
 }
 
 
-int pack_cross_feature(int b1, int b2){
+ int pack_cross_feature(int b1, int b2){
     basic_t f1,f2;
     unpack_basic_feature(b1, f1);
     unpack_basic_feature(b2, f2);
@@ -101,11 +101,11 @@ int pack_cross_feature(int b1, int b2){
     else return pack_cross_feature(-dc, -dr, f2.second, f1.second);
 }
 
-bool is_temporal_feature(int pack){
+ bool is_temporal_feature(int pack){
     return pack >= k_total_basic_features + num_cross_features_ && pack < k_total_basic_features + num_cross_features_ + num_temporal_features_;;
 }
 
-int pack_temporal_feature(int dc, int dr, int k1, int k2){
+ int pack_temporal_feature(int dc, int dr, int k1, int k2){
     
    dc += 15;
    dr += 13;
@@ -120,7 +120,7 @@ int pack_temporal_feature(int dc, int dr, int k1, int k2){
 
 }
 
-int pack_temporal_feature(int b1, int b2){
+ int pack_temporal_feature(int b1, int b2){
     basic_t f1,f2;
     unpack_basic_feature(b1, f1);
     unpack_basic_feature(b2, f2);
@@ -132,7 +132,7 @@ int pack_temporal_feature(int b1, int b2){
 }
 
 
- int is_background(int c, int r, int p){
+  int is_background(int c, int r, int p){
 
     p >>= 1;
 
@@ -148,11 +148,11 @@ int pack_temporal_feature(int b1, int b2){
     return background[r][c];
 }
 
-bool is_basic_feature(int pack) {
+ bool is_basic_feature(int pack) {
         return (pack >= 0) && (pack < k_total_basic_features);
 }
 
- void restore_state(Node *nod, ALEInterface *env){
+  void restore_state(Node *nod, ALEInterface *env){
      Node * par = nod->get_parent();
      if(par != NULL){
          env->restoreState(par->get_state());

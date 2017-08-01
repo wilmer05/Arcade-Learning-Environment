@@ -82,9 +82,13 @@ Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_scree
         } else{
             env->getScreenGrayscale(v);    
         }
-        nod = new Node(this, a, nextState, cur_d, reward_so_far + reward, cur_disc, v);
-        nod->generated_by_df = true;
-        this -> childs.push_back(nod);
+        try{
+            nod = new Node(this, a, nextState, cur_d, reward_so_far + reward, cur_disc, v);
+            nod->generated_by_df = true;
+            this -> childs.push_back(nod);
+        }catch(std::bad_alloc &ba){
+            nod = NULL;
+        }
     }
     
 
@@ -164,8 +168,11 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen){
         } else{
             env->getScreenGrayscale(v);    
         }
-
-        succs.push_back(new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc, v));
+        try{
+            succs.push_back(new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc, v));
+        } catch(std::bad_alloc& ba){
+           break; 
+        }
     }
     //random_shuffle(succs.begin(), succs.end(), my_random);
     random_shuffle(succs.begin(), succs.end());

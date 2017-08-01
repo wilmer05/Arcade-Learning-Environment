@@ -42,7 +42,7 @@ class IWRGB{
 
         IWRGB(int ft, ALEInterface *env, int fs, int tile_row_size, int tile_column_size, int delta);
        
-        float run();
+        virtual float run();
 
         int check_and_update_novelty(Node *);
         bool compute_BPROS(){
