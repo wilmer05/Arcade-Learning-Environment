@@ -139,69 +139,69 @@ float IWRGB::run() {
     while(!q.empty()){
        curr_node = q.front();
 //std::cout << curr_node->get_reward_so_far() << "\n";
-q.pop();
-expanded ++;
-if (maximum_depth < curr_node->get_depth()) maximum_depth = curr_node->get_depth();
-if(best_node->get_reward_so_far() < curr_node->get_reward_so_far() && curr_node != root)
-    best_node = curr_node;
-
-
-bool leaf = curr_node->get_childs().size() == 0;
-if(leaf && generated >= max_lookahead / this->fs) continue;
-std::vector<Node *> succs;
-if(curr_node->get_depth() < max_depth / this -> fs){
-    succs = curr_node->get_successors(env, true);
-}
-
-if(leaf) new_nodes += succs.size();
-curr_node -> unset_count_in_novelty();
-
-for(int i =0 ; i < succs.size() && generated + succs.size() < max_lookahead / this->fs; i++){
-   if(leaf) {
-        generated++;
-        update_av_depth(succs[i]);
-        if(succs[i] -> test_duplicate()){
-            pruned++;
-
-            succs[i] -> set_is_terminal(true);
-            continue;
-        }
-
-        if(!succs[i] -> generated_by_df && check_and_update_novelty(succs[i]) != 1 && dynamic_frame_skipping(succs[i])){
-            succs[i]->set_is_terminal(true);
-            succs[i]->tried++;
-            //pruned++;
-        } else {
-            succs[i]->tried = 0;
-            succs[i]->set_is_terminal(false);
-        }
-   } else{
+        q.pop();
+        expanded ++;
+        if (maximum_depth < curr_node->get_depth()) maximum_depth = curr_node->get_depth();
+        if(best_node->get_reward_so_far() < curr_node->get_reward_so_far() && curr_node != root)
+            best_node = curr_node;
         
-        if(succs[i] -> get_is_terminal()) {
-    
+        
+        bool leaf = curr_node->get_childs().size() == 0;
+        if(leaf && generated >= max_lookahead / this->fs) continue;
+        std::vector<Node *> succs;
+        if(curr_node->get_depth() < max_depth / this -> fs){
+            succs = curr_node->get_successors(env, true);
+        }
+        
+        if(leaf) new_nodes += succs.size();
+        curr_node -> unset_count_in_novelty();
+        
+        for(int i =0 ; i < succs.size() && generated + succs.size() < max_lookahead / this->fs; i++){
+           if(leaf) {
+                generated++;
+                update_av_depth(succs[i]);
                 if(succs[i] -> test_duplicate()){
                     pruned++;
+        
                     succs[i] -> set_is_terminal(true);
                     continue;
                 }
-
-
-
-              if(succs[i] -> generated_by_df || check_and_update_novelty(succs[i]) == 1 || !dynamic_frame_skipping(succs[i])){
-                //add_to_novelty_table(fs);
-                succs[i]->set_is_terminal(false);
-              } else{
-                //pruned++;
-                succs[i]->set_is_terminal(true);
-              }
-        }
+        
+                if(!succs[i] -> generated_by_df && check_and_update_novelty(succs[i]) != 1 && dynamic_frame_skipping(succs[i])){
+                    succs[i]->set_is_terminal(true);
+                    succs[i]->tried++;
+                    //pruned++;
+                } else {
+                    succs[i]->tried = 0;
+                    succs[i]->set_is_terminal(false);
+                }
+           } else{
+                
+                if(succs[i] -> get_is_terminal()) {
+            
+                        if(succs[i] -> test_duplicate()){
+                            pruned++;
+                            succs[i] -> set_is_terminal(true);
+                            continue;
+                        }
+        
+        
+        
+                      if(succs[i] -> generated_by_df || check_and_update_novelty(succs[i]) == 1 || !dynamic_frame_skipping(succs[i])){
+                        //add_to_novelty_table(fs);
+                        succs[i]->set_is_terminal(false);
+                      } else{
+                        //pruned++;
+                        succs[i]->set_is_terminal(true);
+                      }
+                }
+            }
+           if((!succs[i]->get_is_terminal() /*|| (leaf && succs[i]->tried * this->fs < 30)*/) && !succs[i]->test_duplicate() && succs[i]->reused_nodes < max_lookahead  / this->fs)  q.push(succs[i]);
+           else pruned++;
+         }
+        
     }
-   if((!succs[i]->get_is_terminal() /*|| (leaf && succs[i]->tried * this->fs < 30)*/) && !succs[i]->test_duplicate() && succs[i]->reused_nodes < max_lookahead  / this->fs)  q.push(succs[i]);
-   else pruned++;
- }
-    
-}
-std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << best_node -> get_reward_so_far() /*<< " " << best_node*/<< std::endl;
+    std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << best_node -> get_reward_so_far() /*<< " " << best_node*/<< std::endl;
     std::cout<< "Generated nodes: " << generated << std::endl;
     std::cout <<"Expanded nodes:" << expanded << "\n";
     std::cout<< "Pruned nodes: " << pruned << std::endl;
@@ -222,6 +222,7 @@ std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << b
             remove_tree(ch[i]);
         else {
             update_tree(ch[i], rw);
+            ch[i] -> parent = NULL;
         }
     }
     Node *tmp2 = root;
@@ -232,7 +233,9 @@ std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << b
         root = best_node;
         std::cout <<"Best node restarted\n";
     }
+//    std::cout << root << " " << tmp2 << "\n";
     delete tmp2;
+
     std::cout <<"Best action: " << best_act << std::endl;
     return rw;
 }

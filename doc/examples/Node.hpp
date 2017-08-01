@@ -69,9 +69,9 @@ class Node{
         bool generated_by_df;
         std::vector<int> basic_f;
         //std::bitset<k_novelty_columns * k_novelty_rows * k_different_c    olors> patch_f;
+        Node *parent;
     private:
 
-        Node *parent;
         ALEState state;
         int depth;
         double reward_so_far;
