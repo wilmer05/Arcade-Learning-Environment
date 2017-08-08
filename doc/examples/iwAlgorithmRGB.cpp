@@ -34,15 +34,18 @@ IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column
 
 void IWRGB::reset(){
 
+    int times = 0;
+    if(this->features_type == 4) times = k_log_scores;
+
     if(novelty_table.size() > 0 )
         reset_table(novelty_table);
-    else if(this->features_type == 1)
-        novelty_table = std::vector<bool>(k_total_basic_features, false);
+    else if(this->features_type == 1 || this->features_type == 4)
+        novelty_table = std::vector<bool>(k_total_basic_features << times, false);
     else if(this -> features_type == 2){
-        novelty_table = std::vector<bool>(k_total_basic_features + num_cross_features_, false);
+        novelty_table = std::vector<bool>((k_total_basic_features + num_cross_features_) << times, false);
     }
     else if(this -> features_type == 3){
-        novelty_table = std::vector<bool>(k_total_basic_features + num_cross_features_ + num_temporal_features_, false);
+        novelty_table = std::vector<bool>((k_total_basic_features + num_cross_features_ + num_temporal_features_) << times, false);
     }
 
     if(root == NULL) {
@@ -243,7 +246,7 @@ float IWRGB::run() {
     std::cout << "Average depth: " << depth_sum / generated << "\n";
     std::cout << "Reused nodes: " << total_reused << "\n";
     Node *tmp_node = best_node;
-    bool push_in_stack = best_node->get_reward_so_far() != 0.0;
+    bool push_in_stack = best_node->get_reward_so_far() != 0.0 && this->features_type != 1;
     while(best_node->get_depth() > 2) {
         if(push_in_stack) my_stack.push(best_node->get_action());
         best_node = best_node->get_parent();
@@ -317,7 +320,7 @@ void IWRGB::reset_table(std::vector<bool> &tab){
 inline void IWRGB::reset_tables(){
     if(table.size()) 
         reset_table(table); 
-    else if(this->features_type == 1)
+    else if(this->features_type == 1 || this->features_type == 4)
         table = std::vector<bool> (k_total_basic_features, false);
     else if(this->features_type == 2)
         table = std::vector<bool> (k_total_basic_features + num_cross_features_, false);
@@ -401,7 +404,7 @@ void IWRGB::compute_features(Node * nod){
         }
     }
 
-    if(this -> features_type >= 2){
+    if(this -> features_type >= 2 && this->features_type < 4){
         compute_cross_features(nod->basic_f, nod);
     }
     //std::cout << nod->basic_f.size() << "\n";
@@ -414,13 +417,29 @@ int IWRGB::novelty(Node * nod/*, vp &patches*/){
     Node *par;
     std::vector<int> &fs = nod -> basic_f;
 
+    int log_score = this->features_type == 4 ? 1 : 0;
+    float rw = nod->get_reward_so_far();
+
+    int times = this->features_type == 4 ? k_log_scores : 0;
+
+    int cnt = 0;
+    while(times > 0 && log_score < rw) log_score <<= 1, cnt++;
+    
+    if(cnt >= (1 << k_log_scores)) cnt = (1<<k_log_scores) - 1;
+
+
+    //std::cout << log_score << " " << cnt <<"\n";
     //std::cout << novelty_table.size() << "\n";
     for(int i=0 ;i < fs.size();i++){
-        assert(fs[i] < novelty_table.size());
-        if(!novelty_table[fs[i]]){
+        int tmp = fs[i];
+        tmp <<= times;
+        tmp += cnt;
+        //std::cout << log_score << " " << cnt <<"\n";
+        assert(tmp < novelty_table.size());
+        if(!novelty_table[tmp]){
             nov = 1;
             total_features++; 
-            novelty_table[fs[i]] = true;
+            novelty_table[tmp] = true;
         }
     }
     return nov;

@@ -178,8 +178,8 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen){
            break; 
         }
     }
-    //random_shuffle(succs.begin(), succs.end(), my_random);
-    random_shuffle(succs.begin(), succs.end());
+    random_shuffle(succs.begin(), succs.end(), my_random);
+    //random_shuffle(succs.begin(), succs.end());
     childs = succs;
     return childs;
 }

@@ -38,4 +38,9 @@ const int k_time_steps_comparison = 60;
  const size_t num_cross_features_ = num_cross_features_type0_ + num_cross_features_type1_ + num_cross_features_type2_; // 6856768
 
  const size_t num_temporal_features_ = 31 * 27 * 128 * 128;
+
+
+ const int k_log_scores = 5;
+
 #endif
+
