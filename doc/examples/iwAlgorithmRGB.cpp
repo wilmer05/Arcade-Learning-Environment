@@ -249,7 +249,7 @@ float IWRGB::run() {
     std::cout << "Average depth: " << depth_sum / generated << "\n";
     std::cout << "Reused nodes: " << total_reused << "\n";
     Node *tmp_node = best_node;
-    bool push_in_stack = best_node->get_reward_so_far() != 0.0 && this->features_type != 1;
+    bool push_in_stack = best_node->get_reward_so_far() != 0.0 && this->features_type != 1 && this->features_type != 4;
     while(best_node->get_depth() > 2) {
         if(push_in_stack) my_stack.push(best_node->get_action());
         best_node = best_node->get_parent();
