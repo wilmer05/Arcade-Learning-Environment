@@ -10,6 +10,7 @@
 #include"utils.hpp"
 #include <map>
 #include <bitset>
+#include<functional>
 
 
 #define RAM_FEATURES 1
@@ -32,6 +33,13 @@ typedef std::vector<std::pair<int,int> > vp;
 
 //std::vector<int> table_basic;
 //std::vector<int> novelty_table_basic;
+
+struct ClassComparer{
+    bool operator()(Node *n1, Node* n2){
+        return n1->get_depth() > n2->get_depth() || (n1->get_depth() == n2->get_depth() && n1->get_reward_so_far() > n2->get_reward_so_far());
+    }
+};
+
 class IWRGB{
     public:
         /*IWRGB() { 
@@ -55,6 +63,7 @@ class IWRGB{
             return features_type == 5 || features_type == 7;
         }
 
+        
         void init_similarity_talbe(int c_number, int r_number) {
             similarity_table = vix4(9, vix3(k_time_steps_comparison / this -> fs, vix2(c_number, vi(r_number, 0))));
         }
@@ -94,7 +103,8 @@ class IWRGB{
         //bool novelty_table_bpros[k_different_colors][k_different_colors][k_novelty_columns * 2][k_novelty_rows * 2];
         //bool novelty_table_bpros[1][1][1][1];
         void update_tree(Node *, float);
-        std::queue<Node *> q;
+        //std::queue<Node *> q;
+        std::priority_queue<Node *, std::vector<Node* >, ClassComparer> q;
         std::stack<Action> my_stack;
         int features_type;
         int maximum_depth;

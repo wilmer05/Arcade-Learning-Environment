@@ -14,7 +14,8 @@
 
 IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column_sz, int delta) {
     features_type = ft;
-    q = std::queue<Node *>();
+    //q = std::queue<Node *>();
+    //q = std::priority_queue<Node *, std::vector<Node* >, bool (*) (Node*, Node*) >(&my_comparer);
     env = ale;
     root = NULL;
     step_number = 0;
@@ -170,7 +171,9 @@ float IWRGB::run() {
     //std::cout <<"Vax2\n";
     //std::cout << max_lookahead / this->fs;
     while(!q.empty()){
-       curr_node = q.front();
+        //curr_node = q.front();
+        curr_node = q.top();
+        //std::cout << curr_node -> get_reward_so_far() << " " << curr_node->get_depth() << "\n";
 //std::cout << curr_node->get_reward_so_far() << "\n";
         q.pop();
         expanded ++;
