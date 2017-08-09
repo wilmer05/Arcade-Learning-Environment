@@ -25,6 +25,7 @@
 #include <ctime>
 #include <cstdlib>
 #include "butils.h"
+#include "iwCarmel.hpp"
 using namespace std;
 
 int main(int argc, char** argv) {
@@ -56,7 +57,13 @@ int main(int argc, char** argv) {
     float totalReward = 0;
     int episode;
     //ActionVect legal_actions = ale.getMinimalActionSet();
-    IWRGB iw = IWRGB(atoi(argv[2]), &ale, fs, atoi(argv[4]), atoi(argv[5]), atoi(argv[6]));
+    IWRGB *iw;
+    if(atoi(argv[2]) <= 4 )
+        iw = new IWRGB(atoi(argv[2]), &ale, fs, atoi(argv[4]), atoi(argv[5]), atoi(argv[6]));
+    else { 
+        std::cout << "Using Carmels trick\n";
+        iw = new IWCARMEL(atoi(argv[2]) - 4, &ale, fs, atoi(argv[4]), atoi(argv[5]), atoi(argv[6]));
+    }
     cout << "Starting Episode\n";
     for (episode=0; !ale.game_over() && episode<max_steps / fs; episode++) {
 
@@ -64,13 +71,13 @@ int main(int argc, char** argv) {
         //time (&start);
         start = Utils::read_time_in_seconds();
         
-        totalReward += iw.run();
+        totalReward += iw->run();
         
         end = Utils::read_time_in_seconds();
 
         cout << "Step number " << episode  + 1<< " ended with score: " << totalReward << endl;
         cout <<"Elapsed time: " << end-start << endl;
-        cout << "Total features in lookahead = " << iw.get_total_features() << "\n";
+        cout << "Total features in lookahead = " << iw->get_total_features() << "\n";
     }
     if(episode == max_steps) cout << "Ended by number of steps\n";
     else cout <<"Ended by game over \n";

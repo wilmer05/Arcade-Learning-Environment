@@ -75,18 +75,20 @@ class IWRGB{
 
         //void reset_table(std::vector<int> &);
         void reset_table(std::vector<bool> &);
-        void reset_tables();
+
+    protected:
         int generated;
+        virtual void reset_tables();
         int news;
         double depth_sum;
         double depth_percentage;
         int pruned;
         int expanded;
 
-        void compute_features(Node *);
-        int novelty(Node *);
+        virtual void compute_features(Node *);
+        virtual int novelty(Node *);
         void remove_tree(Node *); 
-        void reset();
+        virtual void reset();
         void free_the_memory(Node*);
         //void restore_state(Node *nod);
         //bool novelty_table_basic[k_novelty_columns][k_novelty_rows][k_different_colors];
