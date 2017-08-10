@@ -14,6 +14,7 @@
 
 IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column_sz, int delta) {
     features_type = ft;
+    look_number = 0;
     //q = std::queue<Node *>();
     //q = std::priority_queue<Node *, std::vector<Node* >, bool (*) (Node*, Node*) >(&my_comparer);
     env = ale;
@@ -143,6 +144,7 @@ float IWRGB::execute_action(Action best_act){
 
 float IWRGB::run() {
     //std::cout <<"Va\n";
+    look_number++;
     if(my_stack.size()){
         Action b_act = my_stack.top();
         my_stack.pop();
@@ -156,7 +158,7 @@ float IWRGB::run() {
     int total_reused = 0;
     for(int i= 0 ; i< chs.size(); i++) {
         //std::cout <<"Entre " << chs.size() << " " << chs[i]->tried << "\n";
-        chs[i]->count_nodes();
+        chs[i]->count_nodes(look_number);
         //std::cout << "#########" ;
         //std::cout << chs[i] -> reused_nodes << "\n";
         total_reused += chs[i] -> reused_nodes;
@@ -226,6 +228,7 @@ float IWRGB::run() {
                       if(succs[i] -> generated_by_df || check_and_update_novelty(succs[i]) == 1 || !dynamic_frame_skipping(succs[i])){
                         //add_to_novelty_table(fs);
                         succs[i]->set_is_terminal(false);
+                        free_the_memory(succs[i]);
                       } else{
                         //pruned++;
                         succs[i]->set_is_terminal(true);
@@ -251,7 +254,7 @@ float IWRGB::run() {
     Node *tmp_node = best_node;
     bool push_in_stack = best_node->get_reward_so_far() != 0.0 && this->features_type != 1 && this->features_type != 4;
     while(best_node->get_depth() > 2) {
-        if(push_in_stack) my_stack.push(best_node->get_action());
+        //if(push_in_stack) my_stack.push(best_node->get_action());
         best_node = best_node->get_parent();
     }
     Action best_act = best_node -> get_action();

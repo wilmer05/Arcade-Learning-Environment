@@ -124,6 +124,7 @@ class IWRGB{
         int number_of_displacements;
         int new_nodes;
         int total_features;
+        int look_number;
         std::vector<std::pair<int,int> > pixels;
 
 };

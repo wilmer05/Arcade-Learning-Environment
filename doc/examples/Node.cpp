@@ -12,6 +12,7 @@ Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double 
     parent = par;
     tested_duplicate = false;
     features_computed = false;
+    generated_at_step = 10000000;
     state = ale_state;
     depth = d;
     reward_so_far = rew;
@@ -87,6 +88,7 @@ Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_scree
         try{
             nod = new Node(this, a, nextState, cur_d, reward_so_far + reward, cur_disc, v);
             nod->generated_by_df = true;
+            nod->generated_at_step = this->generated_at_step + 1;
             this -> childs.push_back(nod);
         }catch(std::bad_alloc &ba){
             std::cout << "Bad allocation on dfs\n";
@@ -172,7 +174,9 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen){
             env->getScreenGrayscale(v);    
         }
         try{
-            succs.push_back(new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc, v));
+            Node *my_succ = new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc, v);
+            my_succ->generated_at_step = this->generated_at_step + 1;
+            succs.push_back(my_succ);
         } catch(std::bad_alloc& ba){
            std::cout << "Bad alloc in get_succs\n";
            break; 
@@ -224,11 +228,21 @@ std::vector<Node *> Node::get_stateless_successors(ALEInterface *env){
     return childs;
 }
 
-int Node::count_nodes(){
+/*void Node::free_memory(){
+    
+    for(int i =0 ;i < childs.size();i++)
+       childs[i]->free_memory;
+}*/
+
+int Node::count_nodes(int look_number){
     int cnt  = 0;
+    if(look_number - this->generated_at_step > 50) {
+        this->basic_f.clear();
+        this->basic_f.push_back(0);
+    }
     for(int i =0 ;i < childs.size();i++)
         //if(childs[i]->get_childs().size()> 0 )
-        cnt += childs[i]->count_nodes();
+        cnt += childs[i]->count_nodes(look_number);
     reused_nodes = 1 + cnt;
     return reused_nodes;
 }

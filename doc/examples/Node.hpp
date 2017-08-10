@@ -53,7 +53,7 @@ class Node{
         void set_is_duplicate(bool v) { is_duplicate = v; }
         bool test_duplicate();
         std::vector<Node *> childs;
-        int count_nodes();
+        int count_nodes(int);
         bool freed;
         int reused_nodes;
         int tried;
@@ -71,11 +71,13 @@ class Node{
         std::vector<int> basic_f;
         //std::bitset<k_novelty_columns * k_novelty_rows * k_different_c    olors> patch_f;
         Node *parent;
+        int generated_at_step;
     private:
 
         ALEState state;
         int depth;
         double reward_so_far;
+        //void free_memory();
         Action action;
         double discount;
         bool count_in_novelty;
