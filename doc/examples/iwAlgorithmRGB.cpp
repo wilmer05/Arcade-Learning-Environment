@@ -55,6 +55,7 @@ void IWRGB::reset(){
         std::vector<byte_t> feat =  get_feat(env, true);
         root = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, feat);
         best_node = root;
+        root->generated_at_step = look_number;
         //best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, feat);
     }
 
@@ -188,7 +189,7 @@ float IWRGB::run() {
         if(leaf && generated >= max_lookahead / this->fs) continue;
         std::vector<Node *> succs;
         if(curr_node->get_depth() < max_depth / this -> fs){
-            succs = curr_node->get_successors(env, true);
+            succs = curr_node->get_successors(env, true, look_number);
         }
         
         if(leaf) new_nodes += succs.size();
@@ -276,6 +277,7 @@ float IWRGB::run() {
     if(root == best_node){ 
         best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, get_feat(env, true));
         root = best_node;
+        root -> generated_at_step = look_number;
         std::cout <<"Best node restarted\n";
     }
 //    std::cout << root << " " << tmp2 << "\n";
@@ -413,6 +415,7 @@ void IWRGB::compute_features(Node * nod){
     if(this -> features_type >= 2 && this->features_type < 4){
         compute_cross_features(nod->basic_f, nod);
     }
+    screen.clear();
     //std::cout << nod->basic_f.size() << "\n";
 }
 

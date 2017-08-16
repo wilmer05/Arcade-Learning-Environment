@@ -140,7 +140,7 @@ bool Node::test_duplicate(){
 
 int my_random(int i) { return std::rand() % i ;}
 
-std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen){
+std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen, int l_number){
     std::vector<Node *> succs;
     std::srand(unsigned (std::time(0)));
     if(childs.size() > 0) return childs;
@@ -175,7 +175,7 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen){
         }
         try{
             Node *my_succ = new Node(this, acts[i], nextState, cur_d, reward_so_far + reward, cur_disc, v);
-            my_succ->generated_at_step = this->generated_at_step + 1;
+            my_succ->generated_at_step = l_number + 1;
             succs.push_back(my_succ);
         } catch(std::bad_alloc& ba){
            std::cout << "Bad alloc in get_succs\n";
@@ -236,7 +236,8 @@ std::vector<Node *> Node::get_stateless_successors(ALEInterface *env){
 
 int Node::count_nodes(int look_number){
     int cnt  = 0;
-    if(look_number - this->generated_at_step > 50) {
+    if(look_number - this->generated_at_step > 3) {
+        //std::cout <<"Cleaning " << look_number << " " << this->get_depth()<<"\n";
         this->basic_f.clear();
         this->basic_f.push_back(0);
     }

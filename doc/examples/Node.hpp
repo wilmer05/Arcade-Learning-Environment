@@ -17,7 +17,7 @@ class Node{
 
         Node(Node* par, Action act, int d, double rew, double discs);
 
-        std::vector<Node *> get_successors(ALEInterface *env, bool);
+        std::vector<Node *> get_successors(ALEInterface *env, bool, int);
 
         std::vector<Node *> get_stateless_successors(ALEInterface *env);
         ALEState get_state();
