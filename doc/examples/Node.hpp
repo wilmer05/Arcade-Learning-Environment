@@ -13,7 +13,7 @@ typedef std::vector<std::vector<std::vector< std::map<int, int> > > > basic_tabl
 class Node{
     public:
 
-        Node(Node* par, Action act, ALEState ale_state, int d, double rew, double discs, std::vector<byte_t> r);
+        Node(Node* par, Action act, ALEState *ale_state, int d, double rew, double discs, std::vector<byte_t> r);
 
         Node(Node* par, Action act, int d, double rew, double discs);
 
@@ -21,7 +21,14 @@ class Node{
 
         std::vector<Node *> get_stateless_successors(ALEInterface *env);
         ALEState get_state();
+        ALEState *get_state_address(){
+            return this->state;
+        }
         
+        void null_state_address(){
+            delete this->state;
+            this->state = NULL;
+        }
         double get_reward_so_far(){ return reward_so_far; }
         void set_reward_so_far(float substract){ 
             reward_so_far /= discount_reward;
@@ -74,7 +81,7 @@ class Node{
         int generated_at_step;
     private:
 
-        ALEState state;
+        ALEState *state;
         int depth;
         double reward_so_far;
         //void free_memory();

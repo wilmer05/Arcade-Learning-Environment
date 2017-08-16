@@ -53,7 +53,7 @@ void IWRGB::reset(){
     if(root == NULL) {
         ActionVect v  = env->getMinimalActionSet();
         std::vector<byte_t> feat =  get_feat(env, true);
-        root = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, feat);
+        root = new Node(NULL, v[rand() % v.size()], new ALEState(env->cloneState()), 1, 0, 1, feat);
         best_node = root;
         root->generated_at_step = look_number;
         //best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, feat);
@@ -86,7 +86,6 @@ bool IWRGB::dynamic_frame_skipping(Node *nod){
     if(!nod->childs.size()){
          Node *curr_node = nod; 
          int st = 0;
-         //env->restoreState(nod->get_state());
          for(st =0 ; st < steps && st + generated < max_lookahead / this->fs; st++){
             
             Node *succ = curr_node->generate_child_with_same_action(env, true);
@@ -122,7 +121,6 @@ bool IWRGB::dynamic_frame_skipping(Node *nod){
 
 float IWRGB::execute_action(Action best_act){
     std::vector<Node *> ch = root->get_childs();
-    //restore_state(root, env);
     float rw = env->act(best_act);
     Node *new_root;
     for(int i =0 ; i<ch.size(); i++) {
@@ -145,6 +143,7 @@ float IWRGB::execute_action(Action best_act){
 
 float IWRGB::run() {
     //std::cout <<"Va\n";
+    ALEState root_state = env->cloneState();
     look_number++;
     if(my_stack.size()){
         Action b_act = my_stack.top();
@@ -190,6 +189,9 @@ float IWRGB::run() {
         std::vector<Node *> succs;
         if(curr_node->get_depth() < max_depth / this -> fs){
             succs = curr_node->get_successors(env, true, look_number);
+            if(curr_node->get_state_address() != NULL){
+                curr_node->null_state_address();
+            }
         }
         
         if(leaf) new_nodes += succs.size();
@@ -261,7 +263,8 @@ float IWRGB::run() {
     Action best_act = best_node -> get_action();
 
     std::vector<Node *> ch = root->get_childs();
-    restore_state(root, env);
+    //restore_state(root, env);
+    env->restoreState(root_state);
     float rw = env->act(best_act);
     for(int i =0 ; i<ch.size(); i++) {
         if(ch[i] -> get_action() != best_act) 
@@ -275,7 +278,7 @@ float IWRGB::run() {
     root = best_node;
     best_node = tmp_node;
     if(root == best_node){ 
-        best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, get_feat(env, true));
+        best_node = new Node(NULL, v[rand() % v.size()], new ALEState(env->cloneState()), 1, 0, 1, get_feat(env, true));
         root = best_node;
         root -> generated_at_step = look_number;
         std::cout <<"Best node restarted\n";

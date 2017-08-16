@@ -8,7 +8,7 @@
 #include<algorithm>
 #include<cstdlib>
 #include<ctime>
-Node::Node(Node* par, Action act, ALEState ale_state, int d, double rew, double disc, std::vector<byte_t> feat) {
+Node::Node(Node* par, Action act, ALEState *ale_state, int d, double rew, double disc, std::vector<byte_t> feat) {
     parent = par;
     tested_duplicate = false;
     features_computed = false;
@@ -65,13 +65,13 @@ Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_scree
     if(this->childs.size()==1) return this->childs[0];
     if(this->childs.size() > 0) return nod;
 
-    env->restoreState(this->state);
+    env->restoreState(this->get_state());
     
     int cur_d = depth + 1;
     double cur_disc = discount * discount_reward;
     if(!env->game_over()){
         float reward = env->act(a) * cur_disc;
-        ALEState nextState = env->cloneState();
+        ALEState *nextState = new ALEState(env->cloneState());
         if(env->game_over()){
             reward = -10000000;
         }
@@ -88,7 +88,7 @@ Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_scree
         try{
             nod = new Node(this, a, nextState, cur_d, reward_so_far + reward, cur_disc, v);
             nod->generated_by_df = true;
-            nod->generated_at_step = this->generated_at_step + 1;
+            nod->generated_at_step = this->generated_at_step;
             this -> childs.push_back(nod);
         }catch(std::bad_alloc &ba){
             std::cout << "Bad allocation on dfs\n";
@@ -101,7 +101,7 @@ Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_scree
 }
 
 ALEState Node::get_state(){
-    return this->state;
+    return *(this->state);
 }
 
 
@@ -127,7 +127,7 @@ bool Node::test_duplicate(){
         Node * sibling = parent->childs[c];
         if (sibling->get_is_duplicate() || sibling == node || sibling->childs.size() == 0) continue;
 
-         if (sibling->state.equals(node->state)) {
+         if (sibling->get_state().equals(*(node->state))) {
              node->set_is_duplicate(true);
              return true;
          }
@@ -161,7 +161,7 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen, in
             env->restoreState(node_state);
         
         float reward = env->act(acts[i]) * cur_disc;
-        ALEState nextState = env->cloneState();
+        ALEState *nextState = new ALEState(env->cloneState());
         if(env->game_over()) reward = -10000000;
 
         std::vector<byte_t> v;

@@ -105,7 +105,7 @@ class IWCARMEL : public IWRGB{
             if(root == NULL) {
                 ActionVect v  = env->getMinimalActionSet();
                 std::vector<byte_t> feat =  get_feat(env, true);
-                root = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, feat);
+                root = new Node(NULL, v[rand() % v.size()], new ALEState(env->cloneState()), 1, 0, 1, feat);
                 best_node = root;
                 //best_node = new Node(NULL, v[rand() % v.size()], env->cloneState(), 1, 0, 1, feat);
             }
