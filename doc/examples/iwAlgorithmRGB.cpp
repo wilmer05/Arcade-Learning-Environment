@@ -156,6 +156,7 @@ float IWRGB::run() {
 
     std::vector<Node *> chs = curr_node->get_childs();
     int total_reused = 0;
+
     for(int i= 0 ; i< chs.size(); i++) {
         //std::cout <<"Entre " << chs.size() << " " << chs[i]->tried << "\n";
         chs[i]->count_nodes(look_number);
@@ -172,6 +173,7 @@ float IWRGB::run() {
     new_nodes = 0;
     //std::cout <<"Vax2\n";
     //std::cout << max_lookahead / this->fs;
+
     while(!q.empty()){
         //curr_node = q.front();
         curr_node = q.top();
@@ -217,16 +219,13 @@ float IWRGB::run() {
                     succs[i]->set_is_terminal(false);
                 }
            } else{
-                
                 if(succs[i] -> get_is_terminal()) {
             
-                        if(succs[i] -> test_duplicate()){
-                            pruned++;
-                            succs[i] -> set_is_terminal(true);
-                            continue;
-                        }
-        
-        
+                      if(succs[i] -> test_duplicate()){
+                          pruned++;
+                          succs[i] -> set_is_terminal(true);
+                          continue;
+                      }
         
                       if(succs[i] -> generated_by_df || check_and_update_novelty(succs[i]) == 1 || !dynamic_frame_skipping(succs[i])){
                         //add_to_novelty_table(fs);
@@ -240,11 +239,14 @@ float IWRGB::run() {
                     free_the_memory(succs[i]);
                 }
             }
+            //std::cout<<"OUT\n";
            if((!succs[i]->get_is_terminal() /*|| (leaf && succs[i]->tried * this->fs < 30)*/) && !succs[i]->test_duplicate() && succs[i]->reused_nodes < max_lookahead  / this->fs)  q.push(succs[i]);
            else pruned++;
+            //std::cout<<"OUT2\n";
          }
-        
+            //std::cout<<"OUT3\n";
     }
+    //std::cout << "OUT OF LOOP\n";
     std::cout<< "Best node at depth: " << best_node->get_depth() << ", reward:" << best_node -> get_reward_so_far() /*<< " " << best_node*/<< std::endl;
     std::cout<< "Generated nodes: " << generated << std::endl;
     std::cout <<"Expanded nodes:" << expanded << "\n";
@@ -292,7 +294,8 @@ float IWRGB::run() {
 
 void IWRGB::free_the_memory(Node *nod){
     int sz = nod->basic_f.size();
-    if(!sz) return;
+    if(!sz || this->features_type == 4) return;
+    //if(!sz) return;
     int idx=0;
 
     //std::cout << "freeing " << nod->basic_f.size() <<"\n";

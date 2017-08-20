@@ -91,7 +91,7 @@ Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_scree
             nod->generated_at_step = this->generated_at_step;
             this -> childs.push_back(nod);
         }catch(std::bad_alloc &ba){
-            std::cout << "Bad allocation on dfs\n";
+        //    std::cout << "Bad allocation on dfs\n";
             nod = NULL;
         }
     }
@@ -126,8 +126,11 @@ bool Node::test_duplicate(){
     for (int c = 0; c < parent->childs.size(); c++) {
         Node * sibling = parent->childs[c];
         if (sibling->get_is_duplicate() || sibling == node || sibling->childs.size() == 0) continue;
-
-         if (sibling->get_state().equals(*(node->state))) {
+    
+  /*      if(sibling->state == NULL || node->state == NULL){
+    //        std::cout << "#########SENDO BUGGGGGGGGGGG#########\n";
+        }*/
+         if (sibling->state != NULL && node->state != NULL && sibling->get_state().equals(*(node->state))) {
              node->set_is_duplicate(true);
              return true;
          }
@@ -178,7 +181,7 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen, in
             my_succ->generated_at_step = l_number + 1;
             succs.push_back(my_succ);
         } catch(std::bad_alloc& ba){
-           std::cout << "Bad alloc in get_succs\n";
+        //   std::cout << "Bad alloc in get_succs\n";
            break; 
         }
     }
@@ -236,11 +239,11 @@ std::vector<Node *> Node::get_stateless_successors(ALEInterface *env){
 
 int Node::count_nodes(int look_number){
     int cnt  = 0;
-    if(look_number - this->generated_at_step > 3) {
-        //std::cout <<"Cleaning " << look_number << " " << this->get_depth()<<"\n";
+/*    if(look_number - this->generated_at_step > 3) {
+//        std::cout <<"Cleaning " << look_number << " " << this->get_depth()<<"\n";
         this->basic_f.clear();
         this->basic_f.push_back(0);
-    }
+    }*/
     for(int i =0 ;i < childs.size();i++)
         //if(childs[i]->get_childs().size()> 0 )
         cnt += childs[i]->count_nodes(look_number);
