@@ -151,6 +151,7 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen, in
     std::srand(unsigned (std::time(0)));
     if(childs.size() > 0 || this->state == NULL) return childs;
 
+    assert(this->state != NULL);
     env->restoreState(this->get_state());
     ActionVect acts = env->getMinimalActionSet();
 
