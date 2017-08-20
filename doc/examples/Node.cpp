@@ -8,6 +8,7 @@
 #include<algorithm>
 #include<cstdlib>
 #include<ctime>
+#include<cassert>
 Node::Node(Node* par, Action act, ALEState *ale_state, int d, double rew, double disc, std::vector<byte_t> feat) {
     parent = par;
     tested_duplicate = false;
@@ -63,7 +64,7 @@ Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_scree
     Node *nod = NULL;
 
     if(this->childs.size()==1) return this->childs[0];
-    if(this->childs.size() > 0) return nod;
+    if(this->childs.size() > 0 || this->state==NULL) return nod;
 
     env->restoreState(this->get_state());
     
@@ -108,9 +109,11 @@ ALEState Node::get_state(){
 void Node::restore_state(Node *nod, ALEInterface *env){
     Node * par = nod->get_parent();
     if(par != NULL){
+        assert(par->state != NULL);
         env->restoreState(par->get_state());
         env->act(nod->get_action());
      } else{
+        assert(nod->state != NULL);
         env->restoreState(nod->get_state());
      }
 }
@@ -146,7 +149,7 @@ int my_random(int i) { return std::rand() % i ;}
 std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen, int l_number){
     std::vector<Node *> succs;
     std::srand(unsigned (std::time(0)));
-    if(childs.size() > 0) return childs;
+    if(childs.size() > 0 || this->state == NULL) return childs;
 
     env->restoreState(this->get_state());
     ActionVect acts = env->getMinimalActionSet();
@@ -194,7 +197,7 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen, in
 std::vector<Node *> Node::get_stateless_successors(ALEInterface *env){
     std::vector<Node *> succs;
 
-    if(childs.size() > 0) return childs;
+    if(childs.size() > 0 || this->state==NULL) return childs;
 
     /*if(depth >= max_depth) {
         return succs;
