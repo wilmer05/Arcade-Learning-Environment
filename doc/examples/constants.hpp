@@ -1,5 +1,10 @@
 #ifndef CONSTANTS
 #define CONSTANTS
+
+namespace CNT{
+    extern double d_rw;
+}
+
 const int frameskip = 5;
 const int max_depth = 1500;
 const int max_lookahead = 150000;

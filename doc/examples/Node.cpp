@@ -9,6 +9,7 @@
 #include<cstdlib>
 #include<ctime>
 #include<cassert>
+//double CNT::d_rw;
 Node::Node(Node* par, Action act, ALEState *ale_state, int d, double rew, double disc, std::vector<byte_t> feat) {
     parent = par;
     tested_duplicate = false;
@@ -69,7 +70,7 @@ Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_scree
     env->restoreState(this->get_state());
     
     int cur_d = depth + 1;
-    double cur_disc = discount * discount_reward;
+    double cur_disc = discount * CNT::d_rw;
     if(!env->game_over()){
         float reward = env->act(a) * cur_disc;
         ALEState *nextState = new ALEState(env->cloneState());
@@ -156,7 +157,7 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen, in
     ActionVect acts = env->getMinimalActionSet();
 
     int cur_d = depth + 1;
-    double cur_disc = discount * discount_reward;
+    double cur_disc = discount * CNT::d_rw;
 
     
     if(env->game_over()){ 
@@ -209,7 +210,7 @@ std::vector<Node *> Node::get_stateless_successors(ALEInterface *env){
     ActionVect acts = env->getMinimalActionSet();
     this -> childActs = acts;
     int cur_d = depth + 1;
-    double cur_disc = discount * discount_reward;
+    double cur_disc = discount * CNT::d_rw;
 
     if(env->game_over()){ 
         return succs;
