@@ -61,6 +61,7 @@ class Node{
         bool test_duplicate();
         std::vector<Node *> childs;
         int count_nodes(int);
+        int count_nodes();
         bool freed;
         int reused_nodes;
         int tried;

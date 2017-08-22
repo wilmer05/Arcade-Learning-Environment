@@ -25,7 +25,7 @@ endif
 all: SimulatorAgent
 
 SimulatorAgent:
-	$(CXX) $(DEFINES) $(FLAGS) $(FILE).cpp Node.cpp iwAlgorithm.cpp utils.cpp $(LDFLAGS) -o $(FILE)
+	$(CXX) $(DEFINES) $(FLAGS) $(FILE).cpp $(LDFLAGS) -o $(FILE)
 
 clean:
 	rm -rf SimulatorAgent *.o

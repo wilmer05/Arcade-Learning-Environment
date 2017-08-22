@@ -16,12 +16,10 @@
 
 #include <iostream>
 #include <ale_interface.hpp>
-#include"iwAlgorithm.hpp"
 #ifdef __USE_SDL
   #include <SDL.h>
 #endif
 #include "constants.hpp"
-#include "iwAlgorithm.hpp"
 #include <time.h>
 using namespace std;
 

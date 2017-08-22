@@ -254,3 +254,12 @@ int Node::count_nodes(int look_number){
     reused_nodes = 1 + cnt;
     return reused_nodes;
 }
+
+int Node::count_nodes(){
+    int cnt  = 0;
+    for(int i =0 ;i < childs.size();i++)
+        //if(childs[i]->get_childs().size()> 0 )
+        cnt += childs[i]->count_nodes();
+    reused_nodes = 1 + cnt;
+    return reused_nodes;
+}

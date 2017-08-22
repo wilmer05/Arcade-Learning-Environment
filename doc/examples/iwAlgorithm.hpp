@@ -29,17 +29,18 @@ class IW{
 
     private:
         std::vector<std::pair<int,byte_t> > get_features(Node *);
-        int novelty(std::vector<std::pair<int,byte_t> > fs);
+        int novelty(std::vector<std::pair<int,byte_t> > fs, Node *);
         void add_to_novelty_table( std::vector<std::pair<int,byte_t> > fs );
         void remove_tree(Node *); 
         void reset();
         void restore_state(Node *nod);
-        int novelty_table[300][300];
+        double novelty_table[300][300];
         void update_tree(Node *, float);
         std::queue<Node *> q;
         int features_type;
         int fs;
         int maximum_depth;
+        int depth_sum;
         ALEInterface *env;
         Node * root;
         Node *best_node;

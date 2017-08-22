@@ -7,6 +7,8 @@
 #include<utility>
 #include "iwAlgorithm.hpp"
 #include "constants.hpp"
+#include<algorithm>
+#include<cmath>
 
 IW::IW(int ft, ALEInterface *ale) {
     features_type = ft;
@@ -32,10 +34,10 @@ void IW::reset(){
     if(root == NULL) {
         ActionVect v  = env->getMinimalActionSet();
         std::vector<byte_t> dummy_v;
-        root = new Node(NULL, v[0], env->cloneState(), 1, 0, 1, dummy_v);
-        best_node = new Node(NULL, v[0], env->cloneState(), -5000000, -5000000, -5000000, dummy_v);
+        root = new Node(NULL, v[0], new ALEState(env->cloneState()), 1, 0, 1, dummy_v);
+        best_node = new Node(NULL, v[0], new ALEState(env->cloneState()), -5000000, -5000000, -5000000, dummy_v);
     }
-    for(int i = 0; i<300;i++) for(int j = 0; j < 300; j++) novelty_table[i][j]=0;
+    for(int i = 0; i<300;i++) for(int j = 0; j < 300; j++) novelty_table[i][j]=-5000000;
 }
 
 float IW::run() {
@@ -62,6 +64,7 @@ float IW::run() {
     int news = 0;
     int pruned = 0 ;
     int expanded = 0;
+    double depth_sum = 0;
     maximum_depth = 1;
     //CALLGRIND_START_INSTRUMENTATION;
     while(!q.empty()){
@@ -80,7 +83,7 @@ float IW::run() {
        //std::cout <<leaf<< "\n";
        std::vector<Node *> succs;
        if(curr_node -> get_depth() < max_depth / this->fs) {
-            succs = curr_node->get_successors(env, false);
+            succs = curr_node->get_successors(env, false, 0);
        }
        curr_node -> unset_count_in_novelty();
 
@@ -88,6 +91,7 @@ float IW::run() {
            //if(succs[i]->get_is_duplicate()) continue;
            if(leaf) {
                 generated ++;
+                depth_sum += succs[i]->get_depth();
 			    if (check_and_update_novelty(succs[i]) != 1){
 				    succs[i]->set_is_terminal(true);
 				    pruned++;
@@ -132,6 +136,7 @@ float IW::run() {
     std::cout <<"Expanded nodes:" << expanded << "\n";
     std::cout<< "Pruned nodes: " << pruned << std::endl;
     std::cout<< "Maximum depth: " << maximum_depth << std::endl;
+    std::cout << "Average depth: " << depth_sum / (double) std::max(generated, 1) << "\n";
     Node *tmp_node = best_node;
     while(best_node->get_depth() > 2) best_node = best_node->get_parent();
     Action best_act = best_node -> get_action();
@@ -152,7 +157,7 @@ float IW::run() {
     best_node = tmp_node;
     std::vector<byte_t> dummy_v;
     if(root == best_node){ 
-        best_node = new Node(NULL, v[0], env->cloneState(), -5000000, -5000000, -5000000, dummy_v);
+        best_node = new Node(NULL, v[0], new ALEState(env->cloneState()), -5000000, -5000000, -5000000, dummy_v);
         std::cout <<"Best node restarted\n";
     }
     std::cout <<"Best action: " << best_act << std::endl;
@@ -176,7 +181,7 @@ int IW::check_and_update_novelty( Node * nod){
 
     //restore_state(nod);
     std::vector<std::pair<int,byte_t> > fs = get_features(nod); 
-    int nov = novelty(fs);
+    int nov = novelty(fs, nod);
     /*if ( nov == 1 ) {
 	    add_to_novelty_table(fs);
 	}*/
@@ -198,13 +203,13 @@ std::vector<std::pair<int,byte_t> > IW::get_features(Node *nod){
     return fs;
 }
 
-int IW::novelty(std::vector<std::pair<int, byte_t> > fs){
+int IW::novelty(std::vector<std::pair<int, byte_t> > fs, Node* nod){
     int nov = 1e9;
 
     for(int i =0 ; i< fs.size();i++){
-        if(novelty_table[fs[i].first][(int)fs[i].second] == 0){
+        if(novelty_table[fs[i].first][(int)fs[i].second] < nod->get_reward_so_far()){
             nov = 1;
-            novelty_table[fs[i].first][(int)fs[i].second] = 1;
+            novelty_table[fs[i].first][(int)fs[i].second] = nod->get_reward_so_far();
         }
     }
 
