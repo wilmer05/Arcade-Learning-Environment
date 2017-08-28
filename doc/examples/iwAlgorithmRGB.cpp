@@ -187,7 +187,10 @@ float IWRGB::run() {
         
         
         bool leaf = curr_node->get_childs().size() == 0;
-        if(leaf && generated >= max_lookahead / this->fs) continue;
+        //if(leaf && generated >= max_lookahead / this->fs) continue;
+
+        if(leaf && new_nodes >= max_lookahead / this->fs) continue;
+
         std::vector<Node *> succs;
         if(curr_node->get_depth() < max_depth / this -> fs){
             succs = curr_node->get_successors(env, true, look_number);
@@ -199,7 +202,8 @@ float IWRGB::run() {
         if(leaf) new_nodes += succs.size();
         curr_node -> unset_count_in_novelty();
         
-        for(int i =0 ; i < succs.size() && generated + succs.size() < max_lookahead / this->fs; i++){
+        for(int i =0 ; i < succs.size(); i++){
+        //for(int i =0 ; i < succs.size() && generated + succs.size() < max_lookahead / this->fs; i++){
            if(leaf) {
                 generated++;
                 update_av_depth(succs[i]);
