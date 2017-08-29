@@ -144,22 +144,24 @@ float IW::run() {
     std::vector<Node *> ch = root->get_childs();
     restore_state(root);
     float rw = env->act(best_act);
-    for(int i =0 ; i<ch.size(); i++) {
-        if(ch[i] != best_node){ 
-            remove_tree(ch[i]);
-        }
-        else {
+    //for(int i =0 ; i<ch.size(); i++) {
+    //    if(ch[i] != best_node){ 
+            //remove_tree(ch[i]);
+            remove_tree(root);
+        //}
+    //    else {
             //std::cout <<"Si hay un nuevo buen root\n";
-            update_tree(ch[i], rw);
-        }
-    }
-    root = best_node;
-    best_node = tmp_node;
+    //        update_tree(ch[i], rw);
+    //    }
+    //}
+    //root = best_node;
+    //best_node = tmp_node;
     std::vector<byte_t> dummy_v;
-    if(root == best_node){ 
-        best_node = new Node(NULL, v[0], new ALEState(env->cloneState()), -5000000, -5000000, -5000000, dummy_v);
-        std::cout <<"Best node restarted\n";
-    }
+    //if(root == best_node){ 
+        best_node = new Node(NULL, v[rand()%v.size()], new ALEState(env->cloneState()), 1, 0, 1, dummy_v);
+        root = best_node;
+    //    std::cout <<"Best node restarted\n";
+    //}
     std::cout <<"Best action: " << best_act << std::endl;
     return rw;
 }
