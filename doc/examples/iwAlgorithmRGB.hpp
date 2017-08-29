@@ -71,6 +71,7 @@ class IWRGB{
         bool dynamic_frame_skipping(Node *);
         void update_av_depth(Node *);
         float execute_action(Action);
+        bool cache;
     private:
 
         //void reset_table(std::vector<int> &);

@@ -53,10 +53,20 @@ int main(int argc, char** argv) {
     ale.loadROM(argv[1]);
     ale.reset_game();
     //ALEState curr_state = ale.cloneState();
+    std::srand(unsigned(std::time(0)));
     float totalReward = 0;
     int episode;
     //ActionVect legal_actions = ale.getMinimalActionSet();
     IW iw = IW(1, &ale);
+
+     ActionVect v  = ale.getMinimalActionSet();
+     int nr = rand() % 30;
+     if (!nr) nr = 1;
+
+     for(int i =0 ; i < nr;i++){
+         totalReward += ale.act(v[0]);
+     }
+
     for (episode=0; !ale.game_over() && episode<max_steps / 5; episode++) {
         //Action a = iw.run(curr_state, &ale);
         //Action a = legal_actions[3]; 

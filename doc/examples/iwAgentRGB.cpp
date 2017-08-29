@@ -35,14 +35,16 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if(argc > 7){
+    /*if(argc > 7){
         //std::cout << "Changing discount reward to " << atof(argv[7]) << "\n";
         CNT::d_rw = atof(argv[7]);
 //        discount_reward = atof(argv[7]);
     } else {
-       // std::cout << "WTF?\n";
+   */    // std::cout << "WTF?\n";
         CNT::d_rw = 0.995;
-    }
+   // }
+
+
 
     ALEInterface ale;
     std::srand(unsigned(std::time(0)));
@@ -60,6 +62,7 @@ int main(int argc, char** argv) {
 
     // Load the ROM file. (Also resets the system for new settings to
     // take effect.)
+
     int fs = atoi(argv[3]);
     ale.loadROM(argv[1]);
     ale.reset_game();
@@ -75,6 +78,19 @@ int main(int argc, char** argv) {
         iw = new IWCARMEL(atoi(argv[2]) - 4, &ale, fs, atoi(argv[4]), atoi(argv[5]), atoi(argv[6]));
     }
     cout << "Starting Episode\n";
+    if(argc > 7) {
+        std::cout << "Removing cache\n";
+        iw -> cache = false;
+    }
+    ActionVect v  = ale.getMinimalActionSet();
+    int nr = rand() % 10;
+    if (!nr) nr = 1;
+
+    for(int i =0 ; i < nr;i++){
+        totalReward += ale.act(v[0]);
+    }
+
+
     for (episode=0; !ale.game_over() && episode<max_steps / fs; episode++) {
 
         float start,end;

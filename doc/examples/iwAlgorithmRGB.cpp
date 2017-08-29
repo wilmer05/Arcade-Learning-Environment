@@ -15,6 +15,7 @@
 IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column_sz, int delta) {
     features_type = ft;
     look_number = 0;
+    cache = true;
     //q = std::queue<Node *>();
     //q = std::priority_queue<Node *, std::vector<Node* >, bool (*) (Node*, Node*) >(&my_comparer);
     env = ale;
@@ -273,27 +274,30 @@ float IWRGB::run() {
     env->restoreState(root_state);
     float rw = env->act(best_act);
 
-    remove_tree(root);
-    /*for(int i =0 ; i<ch.size(); i++) {
-        if(ch[i] -> get_action() != best_act) 
-            remove_tree(ch[i]);
-        else {
-            update_tree(ch[i], rw);
-            ch[i] -> parent = NULL;
+    if(!this->cache)
+        remove_tree(root);
+    else
+        for(int i =0 ; i<ch.size(); i++) {
+            if(ch[i] -> get_action() != best_act) 
+                remove_tree(ch[i]);
+            else {
+                update_tree(ch[i], rw);
+                ch[i] -> parent = NULL;
+            }
         }
-    }*/
-    /*Node *tmp2 = root;
+    Node *tmp2 = root;
     root = best_node;
     best_node = tmp_node;
-    if(root == best_node){ 
-    */
+    if(!cache || root == best_node){ 
+    
         best_node = new Node(NULL, v[rand() % v.size()], new ALEState(env->cloneState()), 1, 0, 1, get_feat(env, true));
         root = best_node;
         root -> generated_at_step = look_number;
-       // std::cout <<"Best node restarted\n";
-    /*}*/
+        std::cout <<"Root node restarted\n";
+    }
 //    std::cout << root << " " << tmp2 << "\n";
-    //delete tmp2;
+    if(cache)
+        delete tmp2;
 
     std::cout <<"Best action: " << best_act << std::endl;
     return rw;
