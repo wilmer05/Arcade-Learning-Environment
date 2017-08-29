@@ -22,7 +22,7 @@
 #endif
 #include "constants.hpp"
 #include "iwAlgorithm.hpp"
-#include <time.h>
+#include <ctime>
 using namespace std;
 
 
