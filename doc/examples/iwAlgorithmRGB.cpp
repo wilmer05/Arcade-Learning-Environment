@@ -272,25 +272,28 @@ float IWRGB::run() {
     //restore_state(root, env);
     env->restoreState(root_state);
     float rw = env->act(best_act);
-    for(int i =0 ; i<ch.size(); i++) {
+
+    remove_tree(root);
+    /*for(int i =0 ; i<ch.size(); i++) {
         if(ch[i] -> get_action() != best_act) 
             remove_tree(ch[i]);
         else {
             update_tree(ch[i], rw);
             ch[i] -> parent = NULL;
         }
-    }
-    Node *tmp2 = root;
+    }*/
+    /*Node *tmp2 = root;
     root = best_node;
     best_node = tmp_node;
     if(root == best_node){ 
+    */
         best_node = new Node(NULL, v[rand() % v.size()], new ALEState(env->cloneState()), 1, 0, 1, get_feat(env, true));
         root = best_node;
         root -> generated_at_step = look_number;
-        std::cout <<"Best node restarted\n";
-    }
+       // std::cout <<"Best node restarted\n";
+    /*}*/
 //    std::cout << root << " " << tmp2 << "\n";
-    delete tmp2;
+    //delete tmp2;
 
     std::cout <<"Best action: " << best_act << std::endl;
     return rw;
