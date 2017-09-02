@@ -34,7 +34,7 @@ class IW{
         void remove_tree(Node *); 
         void reset();
         void restore_state(Node *nod);
-        double novelty_table[300][300];
+        bool novelty_table[300][300];
         void update_tree(Node *, float);
         std::queue<Node *> q;
         int features_type;

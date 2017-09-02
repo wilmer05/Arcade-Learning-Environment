@@ -37,7 +37,7 @@ void IW::reset(){
         root = new Node(NULL, v[0], new ALEState(env->cloneState()), 1, 0, 1, dummy_v);
         best_node = new Node(NULL, v[0], new ALEState(env->cloneState()), -5000000, -5000000, -5000000, dummy_v);
     }
-    for(int i = 0; i<300;i++) for(int j = 0; j < 300; j++) novelty_table[i][j]=-5000000;
+    for(int i = 0; i<300;i++) for(int j = 0; j < 300; j++) novelty_table[i][j]=false;
 }
 
 float IW::run() {
@@ -209,9 +209,9 @@ int IW::novelty(std::vector<std::pair<int, byte_t> > fs, Node* nod){
     int nov = 1e9;
 
     for(int i =0 ; i< fs.size();i++){
-        if(novelty_table[fs[i].first][(int)fs[i].second] < nod->get_reward_so_far()){
+        if(!novelty_table[fs[i].first][(int)fs[i].second]){
             nov = 1;
-            novelty_table[fs[i].first][(int)fs[i].second] = nod->get_reward_so_far();
+            novelty_table[fs[i].first][(int)fs[i].second] = true;
         }
     }
 
