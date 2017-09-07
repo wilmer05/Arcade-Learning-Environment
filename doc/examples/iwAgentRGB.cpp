@@ -31,7 +31,8 @@ double CNT::d_rw;
 
 int main(int argc, char** argv) {
     if (argc < 7) {
-        std::cerr << "Usage: " << argv[0] << " rom_file <feature_types (1,2,3)> <frame_skip> <tile_row_size> <tile_column_size> <delta_displacement> <optional_rate>\nFeatures types:\n\t1 For basic features\n\t2 for basic features + BPROS\n\t3 for basic + BPROS + BPROT\n\n The displacement is the displacement of basic features on the rows (a number between 0 and tile_row_size - 1)" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " rom_file <feature_types (1,2,3)> <frame_skip> <tile_row_size> <tile_column_size> <delta_displacement> <optional_rate> <optional_cache_mode>\nFeatures types:\n\t1 For basic features\n\t2 for basic features + BPROS\n\t3 for basic + BPROS + BPROT\n\n The displacement is the displacement of basic features on the rows (a number between 0 and tile_row_size - 1)\n\n\tCache modes are 0 for cache, 1 for no cache, 2 for partial." << std::endl;
+
         return 1;
     }
 
@@ -79,9 +80,11 @@ int main(int argc, char** argv) {
     }
     cout << "Starting Episode\n";
     if(argc > 7) {
-        std::cout << "Removing cache\n";
-        iw -> cache = false;
+
+        iw -> cache = atoi(argv[7]);
+
     }
+    std::cout << "Cache mode: " << iw->cache << "\n";
     ActionVect v  = ale.getMinimalActionSet();
     int nr = rand() % 10;
     if (!nr) nr = 1;

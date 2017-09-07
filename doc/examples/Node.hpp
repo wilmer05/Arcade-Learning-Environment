@@ -21,12 +21,14 @@ class Node{
 
         std::vector<Node *> get_stateless_successors(ALEInterface *env);
         ALEState get_state();
+        void get_state_until_node(ALEInterface * env);
         ALEState *get_state_address(){
             return this->state;
         }
         
         void null_state_address(){
-            delete this->state;
+            if(this->state != NULL)
+                delete this->state;
             this->state = NULL;
         }
         double get_reward_so_far(){ return reward_so_far; }
@@ -80,9 +82,9 @@ class Node{
         //std::bitset<k_novelty_columns * k_novelty_rows * k_different_c    olors> patch_f;
         Node *parent;
         int generated_at_step;
+        ALEState *state;
     private:
 
-        ALEState *state;
         int depth;
         double reward_so_far;
         //void free_memory();

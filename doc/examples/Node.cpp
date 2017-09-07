@@ -60,14 +60,27 @@ Node::Node(Node* par, Action act, int d, double rew, double disc) {
     in_tree = false;
 }
 
+void Node::get_state_until_node(ALEInterface *env) {
+
+    if(this->state != NULL){
+        env->restoreState(this->get_state());
+    } else{
+        assert(this->parent != NULL);
+        (this->parent)->get_state_until_node(env);
+        env->act(this->action);
+    }
+
+}
+
 Node * Node::generate_child_with_same_action(ALEInterface * env, bool take_screen){
     Action a = this -> action;
     Node *nod = NULL;
 
     if(this->childs.size()==1) return this->childs[0];
-    if(this->childs.size() > 0 || this->state==NULL) return nod;
+    if(this->childs.size() > 0) return nod;
 
-    env->restoreState(this->get_state());
+    this->get_state_until_node(env);
+    //env->restoreState(this->get_state());
     
     int cur_d = depth + 1;
     double cur_disc = discount * CNT::d_rw;
@@ -150,10 +163,11 @@ int my_random(int i) { return std::rand() % i ;}
 std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen, int l_number){
     std::vector<Node *> succs;
     std::srand(unsigned (std::time(0)));
-    if(childs.size() > 0 || this->state == NULL) return childs;
+    if(childs.size() > 0) return childs;
 
-    assert(this->state != NULL);
-    env->restoreState(this->get_state());
+    //assert(this->state != NULL);
+    //env->restoreState(this->get_state());
+    this->get_state_until_node(env);
     ActionVect acts = env->getMinimalActionSet();
 
     int cur_d = depth + 1;
@@ -163,9 +177,10 @@ std::vector<Node *> Node::get_successors(ALEInterface *env, bool take_screen, in
     if(env->game_over()){ 
         return succs;
     }
-    ALEState node_state = this->get_state();
+    ALEState node_state = env->cloneState();
     for(int i = 0; i < acts.size(); i++) {
         if(i)
+            //this->get_state_until_node(env);
             env->restoreState(node_state);
         
         float reward = env->act(acts[i]) * cur_disc;

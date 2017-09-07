@@ -10,12 +10,13 @@
 #include "iwAlgorithmRGB.hpp"
 #include "constants.hpp"
 #include "utils.hpp"
+#include "butils.h"
 #include <set>
 
 IWRGB::IWRGB(int ft, ALEInterface *ale, int fs, int tile_row_sz, int tile_column_sz, int delta) {
     features_type = ft;
     look_number = 0;
-    cache = true;
+    cache = 1;
     //q = std::queue<Node *>();
     //q = std::priority_queue<Node *, std::vector<Node* >, bool (*) (Node*, Node*) >(&my_comparer);
     env = ale;
@@ -65,6 +66,7 @@ void IWRGB::reset(){
     total_features = 0;
     maximum_depth = 0;
     depth_sum = 0;
+    score_sum = 0;
     depth_percentage = 0;
     //std::cout << novelty_table.size() << "\n";
 }
@@ -92,6 +94,7 @@ bool IWRGB::dynamic_frame_skipping(Node *nod){
             Node *succ = curr_node->generate_child_with_same_action(env, true);
             if(succ == NULL) break;
             update_av_depth(succ);
+            score_sum += succ->get_reward_so_far();
             generated++ ;
             new_nodes++;
             //compute_features(succ);
@@ -144,7 +147,7 @@ float IWRGB::execute_action(Action best_act){
 
 float IWRGB::run() {
     //std::cout <<"Va\n";
-    ALEState root_state = env->cloneState();
+    ALEState *root_state = new ALEState(env->cloneState());
     look_number++;
     if(my_stack.size()){
         Action b_act = my_stack.top();
@@ -153,6 +156,7 @@ float IWRGB::run() {
         return execute_action(b_act);
     }
     reset();
+    root->state = root_state;
     Node *curr_node = root;
 
     std::vector<Node *> chs = curr_node->get_childs();
@@ -195,7 +199,7 @@ float IWRGB::run() {
         std::vector<Node *> succs;
         if(curr_node->get_depth() < max_depth / this -> fs){
             succs = curr_node->get_successors(env, true, look_number);
-            if(curr_node->get_state_address() != NULL){
+            if(curr_node != root && curr_node->get_state_address() != NULL){
                 curr_node->null_state_address();
             }
         }
@@ -208,6 +212,7 @@ float IWRGB::run() {
            if(leaf) {
                 generated++;
                 update_av_depth(succs[i]);
+                score_sum += succs[i]->get_reward_so_far();
                 if(succs[i] -> test_duplicate()){
                     pruned++;
         
@@ -258,8 +263,10 @@ float IWRGB::run() {
     std::cout<< "Pruned nodes: " << pruned << std::endl;
     std::cout<< "Maximum depth: " << maximum_depth << std::endl;
     std::cout << "New generated nodes: " << new_nodes << std::endl;
+    std::cout << "Used the whole budget?: " << (new_nodes >= max_lookahead / this->fs) << "\n";
     if(generated == 0) generated = 1;
     std::cout << "Average depth: " << depth_sum / generated << "\n";
+    std::cout << "Average score: " << score_sum / generated << "\n";
     std::cout << "Reused nodes: " << total_reused << "\n";
     Node *tmp_node = best_node;
     bool push_in_stack = best_node->get_reward_so_far() != 0.0 && this->features_type != 1 && this->features_type != 4;
@@ -271,10 +278,10 @@ float IWRGB::run() {
 
     std::vector<Node *> ch = root->get_childs();
     //restore_state(root, env);
-    env->restoreState(root_state);
+    env->restoreState(*root_state);
     float rw = env->act(best_act);
 
-    if(!this->cache)
+    if( this->cache == 1)
         remove_tree(root);
     else
         for(int i =0 ; i<ch.size(); i++) {
@@ -285,10 +292,11 @@ float IWRGB::run() {
                 ch[i] -> parent = NULL;
             }
         }
+
     Node *tmp2 = root;
     root = best_node;
     best_node = tmp_node;
-    if(!cache || root == best_node){ 
+    if(cache == 1 || root == best_node){ 
     
         best_node = new Node(NULL, v[rand() % v.size()], new ALEState(env->cloneState()), 1, 0, 1, get_feat(env, true));
         root = best_node;
@@ -296,7 +304,7 @@ float IWRGB::run() {
         std::cout <<"Root node restarted\n";
     }
 //    std::cout << root << " " << tmp2 << "\n";
-    if(cache)
+    if(!cache)
         delete tmp2;
 
     std::cout <<"Best action: " << best_act << std::endl;
@@ -321,12 +329,16 @@ void IWRGB::free_the_memory(Node *nod){
 
 void IWRGB::remove_tree(Node * nod){
     std::vector<Node *> ch = nod->get_childs();
+    nod->null_state_address();
     for(int i =0 ; i< ch.size(); i++) remove_tree(ch[i]);
     delete nod;
 }
 
 void IWRGB::update_tree(Node *nod, float reward){
     std::vector<Node *> ch = nod->get_childs();
+    if(cache == 2){
+            nod->null_state_address();
+    }
     for(int i =0 ; i< ch.size(); i++) 
         update_tree(ch[i], reward);
     nod->set_depth(nod->get_depth() - 1);

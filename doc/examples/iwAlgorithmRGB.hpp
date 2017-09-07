@@ -71,7 +71,7 @@ class IWRGB{
         bool dynamic_frame_skipping(Node *);
         void update_av_depth(Node *);
         float execute_action(Action);
-        bool cache;
+        int cache;
     private:
 
         //void reset_table(std::vector<int> &);
@@ -127,6 +127,7 @@ class IWRGB{
         int total_features;
         int look_number;
         std::vector<std::pair<int,int> > pixels;
+        double score_sum;
 
 };
 #endif
